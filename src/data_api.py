@@ -1,13 +1,26 @@
 from models import *
 
+import argparse
 import json
+import pickle
 
+
+def serialize(path, obj) -> None:
+    with open(path, 'wb') as f:
+        pickle.dump(obj, f)
+
+def deserialize(path) -> type:
+    with open(path, 'wb') as f:
+        return pickle.load(f)
+
+def get_quotes() -> dict:
+    return {}
 
 def quotes() -> list[Equity]:
     """
     endpoint: /quotes
     """
-    with open('./tests/quotes.json', 'r') as f:
+    with open('./data/quotes.json', 'r') as f:
         response = json.loads(f.read())
 
     equities = []
@@ -24,13 +37,16 @@ def quotes() -> list[Equity]:
 
     return equities
 
+def get_expiration_chain() -> dict:
+    return {}
+
 def expiration_chain() -> list[ExpirationDate]:
     """
     endpoint: /expirationchain
     
     Gets series of expiration dates for an optionable symbol
     """
-    with open('./tests/expirationchain.json', 'r') as f:
+    with open('./data/expirationchain.json', 'r') as f:
         response = json.loads(f.read())['expirationList']
 
     expiration_dates = []
@@ -39,13 +55,16 @@ def expiration_chain() -> list[ExpirationDate]:
 
     return expiration_dates
 
+def get_chains() -> dict:
+    return {}
+
 def chains() -> tuple[dict[datetime, list[Contract]], dict[datetime, list[Contract]]]:
     """
     endpoint: /chains
     
     Gets pair of call and put contracts
     """
-    with open('./tests/aapl.json', 'r') as f:
+    with open('./data/aapl.json', 'r') as f:
         response = json.loads(f.read())
         
     def date_map(key):
@@ -62,26 +81,12 @@ def chains() -> tuple[dict[datetime, list[Contract]], dict[datetime, list[Contra
     puts = date_map('putExpDateMap')
     return calls, puts
 
-def serialize():
-    ...
-
-def deserialize():
-    ...
-
 def main():
-    quotes()
-    expiration_chain()
-    chains()
-
-    ...  
-    # have an argparser to restrict data that is taken in
-    # --load data.pkl ... store data retrieved
-    # --equities file.txt
-    # --calls-only --puts-only
-    # --strike-width 5
-    # --expiration-months [1, 12], default 2
-    # --verbose 
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--equities', default='./data/spy500.text', help='')
+    parser.add_argument('--expiration-months', type=int, default=3, help='[1, 12]')
+    parser.add_argument('--strike-width', type=int, default=10, help='')
+    parser.add_argument('--verbose', action='store_true')
 
 if __name__ == "__main__":
     main()
