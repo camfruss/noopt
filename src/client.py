@@ -1,8 +1,8 @@
 from models import *
+from parser import *
 
 from base64 import b64encode
 from getpass import getpass
-import json
 from time import time, sleep
 import webbrowser
 
@@ -27,6 +27,7 @@ class Client:
         self._app_secret         = _config.get('APP_SECRET')
         self._redirect_uri       = _config.get('REDIRECT_URI')
         self._access_token       = _config.get('ACCESS_TOKEN')
+        self._access_token_time  = _config.get('ACCESS_TOKEN_TIME', 0)
         self._refresh_token      = _config.get('REFRESH_TOKEN')
         self._refresh_token_time = _config.get('REFRESH_TOKEN_TIME', 0)
 
@@ -38,10 +39,18 @@ class Client:
         """ """
         _ = set_key(self._env_path, key_to_set, value_to_set)
 
-    def _is_token_valid(self):
+    def _is_access_token_valid(self):
         """ 
         """
-        is_valid = time() - float(self._refresh_token_time) < self._access_token_timeout - 60  # type: ignore
+        is_valid = time() - float(self._access_token_time) < self._access_token_timeout - 60  # type: ignore
+        is_valid &= self._access_token is not None
+
+        return is_valid
+
+    def _is_refresh_token_valid(self):
+        """ 
+        """
+        is_valid = time() - float(self._refresh_token_time) < self._refresh_token_timeout - 60  # type: ignore
         is_valid &= self._refresh_token is not None
 
         return is_valid
@@ -76,13 +85,16 @@ class Client:
 
     def authenticate(self):
         """ Initializes or refreshes the Schwab API access token """
+        if self._is_access_token_valid():
+            return
+
         authorization_code = b64encode(f'{self._app_key}:{self._app_secret}'.encode('utf-8')).decode('utf-8')
         headers = {
             'Authorization': f'Basic {authorization_code}',
             'Content-Type': 'application/x-www-form-urlencoded'
         }
 
-        data = self._init_access_token() if not self._is_token_valid() else self._refresh_access_token()
+        data = self._init_access_token() if not self._is_refresh_token_valid() else self._refresh_access_token()
         response: requests.Response = requests.post(
             url=f'{self._oauth_base}/token',
             headers=headers,
@@ -109,116 +121,98 @@ class Client:
                      params=params,
                      timeout=self._request_timeout)
 
-    def _parse_quotes(self) -> list[Equity]:
-        """
-        endpoint: /quotes
-        """
-        with open('./data/quotes.json', 'r') as f:
-            response = json.loads(f.read())
-
-        equities = []
-        for _, value in response.items():
-            if value['assetMainType'] != 'EQUITY':
-                continue
-
-            equity = Equity(**value)
-            equity.reference = Reference(**value.get('reference', {}))
-            equity.quote = Quote(**value.get('quote', {}))
-            equity.regular = Regular(**value.get('regular', {}))
-            equity.fundamental = Fundamental(**value.get('fundamental', {}))
-            equities.append(equity)
-
-        return equities
-
     def quotes(self,
         symbols: str | list[str],
         fields: str | list[str] = 'all',
         indicative: bool = False
     ):
         """
-        { quote, fundamental, extended, reference, regular, all }
+        Keyword Arguments
+        symbols -- 
+        fields -- { quote, fundamental, extended, reference, regular, all }
+        indicative --
         """
-
         params = {
             'symbols': symbols,
             'fields': fields,
             'indicative': indicative,
         }
-        _ = self._market_data_request('/quotes', params=params)
+        response = self._market_data_request('/quotes', params=params)
+        equities = parse_quotes(response.json())
+        print(equities[0].symbol)
 
-    def _parse_expiration_chain(self) -> list[ExpirationDate]:
+    def expiration_chain(self, symbol: str):
         """
-        endpoint: /expirationchain
-        
-        Gets series of expiration dates for an optionable symbol
         """
-        with open('./data/expirationchain.json', 'r') as f:
-            response = json.loads(f.read())['expirationList']
+        params = { 'symbol': symbol }
+        _ = self._market_data_request('/expirationchain', params=params)
 
-        expiration_dates = []
-        for elm in response:
-            expiration_dates.append(ExpirationDate(**elm))
-
-        return expiration_dates
-
-    def expiration_chain(self):
-        ...
-
-    def _parse_chains(self) -> tuple[dict[datetime, list[Contract]], dict[datetime, list[Contract]]]:
-        """
-        endpoint: /chains
-        
-        Gets pair of call and put contracts
-        """
-        with open('./data/aapl.json', 'r') as f:
-            response = json.loads(f.read())
-            
-        def date_map(key):
-            date_format = "%Y-%m-%d"
-            
-            result = {}
-            for expr_date_str, contracts in response[key].items():
-                date = datetime.strptime(expr_date_str.partition(':')[0], date_format)
-                for _, data in contracts.items():
-                    result[date] = Contract(**data[0])
-            return result
-
-        calls = date_map('callExpDateMap')
-        puts = date_map('putExpDateMap')
-        return calls, puts
-
-    def chains(self,
+    def chains(self, *,
         symbol: str,
-        contract_type: str,  # CALL, PUT, ALL
-        strike_count: int,
-        include_underlying_quote: bool,
-        strategy: str,  # SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL
-        interval: float,
-        strike: float,
-        range_: str,  # ITM, NTM, OTM
-        from_date: datetime,  # yyyy-MM-dd 
-        to_date: datetime,  # yyyy-MM-dd
-        volitility: float,
-        underlying_price: float,
-        interest_rate: float, 
-        days_to_expiration: int,  # applies to ANALYTICAL only
-        expiration_month: str,  # JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL
-        option_type: str,
-        entitlement: str  # PN, NP, PP
+        contract_type: str | None,
+        strike_count: int | None,
+        include_underlying_quote: bool | None,
+        strategy: str | None,
+        interval: float | None,
+        strike: float | None,
+        range_: str | None,
+        from_date: datetime | None,
+        to_date: datetime | None,
+        volatility: float | None,
+        underlying_price: float | None,
+        interest_rate: float | None,
+        days_to_expiration: int | None,
+        expiration_month: str | None,
+        option_type: str | None,
+        entitlement: str | None
     ):
         """
+        Keyword Arguments
+        symbol -- single symbol 
+        contract_type -- contract type | values { CALL, PUT, ALL }
+        strike_count -- the number of strikes to return above/below ATM price
+        include_underlying_quote -- 
+        strategy -- values { SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL }
+        interval -- strike interval for SPREAD strategies
+        strike -- strike price 
+        range_ -- ITM, NTM, OTM
+        from_date -- yyyy-MM-dd 
+        to_date -- yyyy-MM-dd
+        volatility -- volatility to use in ANALYTICAL calculations
+        underlying_price -- underlying price to use in ANALYTICAL calculations
+        interest_rate -- interest rate to use in ANALYTICAL calculations
+        days_to_expiration -- days to expiration to use in ANALYTICAL calculations
+        expiration_month -- expiration month | values { JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL }
+        option_type -- 
+        entitlement -- { PN, NP, PP }
         """
         params = {
             'symbol': symbol,
-            'contractType': contract_type.upper(),
-            'strikeCount': strike_count
+            'contractType': contract_type,
+            'strikeCount': strike_count,
+            'includeUnderlyingQuote': include_underlying_quote,
+            'strategy': strategy,
+            'interval': interval,
+            'strike': strike,
+            'range': range_,
+            'fromDate': from_date,
+            'toDate': to_date,
+            'volatility': volatility,
+            'underlyingPrice': underlying_price,
+            'interest_rate': interest_rate,
+            'daysToExpiration': days_to_expiration,
+            'expMonth': expiration_month,
+            'optionType': option_type,
+            'entitlement': entitlement
         }
+        params = { k:v for k,v in params.items() if v is not None }
         _ = self._market_data_request('/chains', params=params)
         
 
 def main():
     client = Client() 
     client.authenticate()
+    client.quotes('AAPL')
 
 if __name__ == "__main__":
     main()

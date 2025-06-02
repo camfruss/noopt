@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from functools import wraps
 import re
 
 """
@@ -37,8 +38,15 @@ def to_snake_case(name: str) -> str:
     
     return name
 
-class Base:
-    def __init__(self, **kwargs):
+
+def base_init(cls):
+    """
+    decorator that overwrites the class's __init__ to support camel to snake case conversions
+    """
+    original = getattr(cls, '__init__', None)
+
+    @wraps(original)  # type: ignore
+    def init(self, **kwargs):
         for key, value in kwargs.items():
             snake_key = to_snake_case(key)
             try:
@@ -46,27 +54,33 @@ class Base:
             except AttributeError:
                 pass
     
+    cls.__init__ = init
+    return cls
+
 #    def __init__(self, **kwargs):
 #        for key, v in kwargs.items():
 #            if (k := to_snake_case(key)) in self.__slots__:  # does NOT include inherited slots
 #                self.__setattr__(k, v)
 
+@base_init
 @dataclass(slots=True)
-class ExpirationDate(Base):
+class ExpirationDate:
     expiration_date: datetime
     days_to_expiration: int
     expiration_type: str  # W
     standard: bool
 
+@base_init
 @dataclass(slots=True)
-class Reference(Base):
+class Reference:
     cusip: int
     description: str
     exchange: str
     exchange_name: str
 
+@base_init
 @dataclass(slots=True)
-class Quote(Base):
+class Quote:
     _52_week_high: float
     _52_week_low: float
     ask_mic_id: str
@@ -95,16 +109,18 @@ class Quote(Base):
     trade_time: float
     volatility: float
 
+@base_init
 @dataclass(slots=True)
-class Regular(Base):
+class Regular:
     regular_market_last_price: float
     regular_market_last_size: float
     regular_market_net_change: float
     regular_market_percent_change: float
     regular_market_trade_time: float
 
+@base_init
 @dataclass(slots=True)
-class Fundamental(Base):
+class Fundamental:
     avg_10_days_volume: float
     avg_1_year_volume: float
     div_amount: float
@@ -115,8 +131,9 @@ class Fundamental(Base):
     fund_leverage_factor: float
     pe_ratio: float
 
+@base_init
 @dataclass(slots=True)
-class Contract(Base):
+class Contract:
     put_call: str  # { CALL, PUT }
     symbol: str
     description: str
@@ -169,8 +186,9 @@ class Contract(Base):
     in_the_money: bool
     mini: bool
 
+@base_init
 @dataclass(slots=True)
-class Equity(Base):
+class Equity:
     symbol: str
     asset_main_type: str
     quote_type: str
