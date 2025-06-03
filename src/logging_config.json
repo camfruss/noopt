@@ -1,0 +1,34 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "json": {
+            "()": "my_logger.JSONFormatter",
+            "fmt_keys": {
+                "level": "levelname",
+                "message": "message",
+                "timestamp": "timestamp",
+                "module": "module",
+                "function": "funcName",
+                "line": "lineno"
+            }
+        }
+    },
+    "handlers": {
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "INFO",
+            "formatter": "json",
+            "filename": "logs/client.jsonl",
+            "maxBytes": 10000,
+            "backupCount": 1
+        }
+    },
+    "filters": {},
+    "loggers": {
+        "root": {
+            "level": "INFO",
+            "handlers": ["file"]
+        }
+    }
+}
