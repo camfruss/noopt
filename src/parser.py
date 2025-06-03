@@ -13,10 +13,11 @@ def parse_quotes(response) -> list[Equity]:
             continue
 
         equity = Equity(**value)
-        equity.reference = Reference(**value.get('reference', {}))
-        equity.quote = Quote(**value.get('quote', {}))
-        equity.regular = Regular(**value.get('regular', {}))
+        equity.extended = Extended(**value.get('extended', {}))
         equity.fundamental = Fundamental(**value.get('fundamental', {}))
+        equity.quote = Quote(**value.get('quote', {}))
+        equity.reference = Reference(**value.get('reference', {}))
+        equity.regular = Regular(**value.get('regular', {}))
         equities.append(equity)
 
     return equities
