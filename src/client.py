@@ -1,8 +1,10 @@
 from models import *
+from my_logger import logger
 from parser import *
 
 from base64 import b64encode
 from getpass import getpass
+import multiprocessing
 from time import time, sleep
 import webbrowser
 
@@ -35,9 +37,21 @@ class Client:
         self._refresh_token_timeout = 7 * 24 * 60 * 60  # 7 days
         self._request_timeout       = 60                # 60 seconds
 
+        # run background daemon that updates the access token
+        self._token_daemon = multiprocessing.Process(target=self._refresh_daemon)
+        self._token_daemon.daemon = True
+        if (auto_update_token):
+            self._token_daemon.start()
+
+    def _refresh_daemon(self):
+        while True:
+            sleep(self._access_token_timeout - 60)
+            self.authenticate()
+
     def _update(self, key_to_set, value_to_set):
         """ """
         _ = set_key(self._env_path, key_to_set, value_to_set)
+        logger.info(f'Updated {key_to_set} in {self._env_path}.')
 
     def _is_access_token_valid(self):
         """ 
@@ -59,6 +73,7 @@ class Client:
         """
         """
         auth_url = f'{self._oauth_base}/authorize?client_id={self._app_key}&redirect_uri={self._redirect_uri}'
+        logger.info('Openning webbrowser to Schwab login')
         webbrowser.open(auth_url)
 
         response_url = getpass(prompt='> Enter response url: ', )
@@ -108,10 +123,6 @@ class Client:
         self._update('REFRESH_TOKEN', refresh_token)
         self._update('REFRESH_TOKEN_TIME', str(time()))
 
-        while (self._auth_update_token):
-            sleep(self._access_token_timeout)
-            self.authenticate()
-
     def _market_data_request(self, endpoint: str, params: dict):
         """
         quotes(take in parameters) -> construct get_request -> parse response -> return
@@ -139,13 +150,17 @@ class Client:
         }
         response = self._market_data_request('/quotes', params=params)
         equities = parse_quotes(response.json())
-        print(equities[0].symbol)
+        return equities
 
     def expiration_chain(self, symbol: str):
         """
         """
-        params = { 'symbol': symbol }
-        _ = self._market_data_request('/expirationchain', params=params)
+        params = { 
+            'symbol': symbol 
+        }
+        response = self._market_data_request('/expirationchain', params=params)
+        expiration_chain = parse_expiration_chain(response.json())
+        return expiration_chain
 
     def chains(self, *,
         symbol: str,
@@ -206,13 +221,15 @@ class Client:
             'entitlement': entitlement
         }
         params = { k:v for k,v in params.items() if v is not None }
-        _ = self._market_data_request('/chains', params=params)
-        
+        response = self._market_data_request('/chains', params=params)
+        chains = parse_chains(response.json())
+        return chains
 
 def main():
     client = Client() 
     client.authenticate()
-    client.quotes('AAPL')
+    _ = client.quotes('AAPL')
+    _ = client.expiration_chain('')  # TODO: combine strs to comma separated str
 
 if __name__ == "__main__":
     main()
