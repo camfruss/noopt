@@ -72,11 +72,28 @@ class ExpirationDate:
 
 @base_init
 @dataclass(slots=True)
+class Extended:
+    ask_price: float
+    ask_size: int
+    bid_price: float
+    last_price: float
+    last_size: int
+    mark: float
+    quote_time: int
+    total_volume: int
+    trade_time: int
+
+@base_init
+@dataclass(slots=True)
 class Reference:
     cusip: int
     description: str
     exchange: str
     exchange_name: str
+    is_hard_to_borrow: bool
+    is_shortable: bool
+    htb_quantity: int
+    htb_rate: float
 
 @base_init
 @dataclass(slots=True)
@@ -103,6 +120,8 @@ class Quote:
     net_change: float
     net_percent_change: float
     open_price: float
+    post_market_change: float
+    post_market_percent_change: float
     quote_time: float
     security_status: str
     total_volume: float
@@ -123,12 +142,18 @@ class Regular:
 class Fundamental:
     avg_10_days_volume: float
     avg_1_year_volume: float
+    declaration_date: datetime
     div_amount: float
+    div_ex_date: datetime
     div_freq: float
     div_pay_amount: float
+    div_pay_date: datetime
     div_yield: float
     eps: float
     fund_leverage_factor: float
+    last_earnings_date: datetime
+    next_div_ex_date: datetime
+    next_div_pay_date: datetime  # '2025-05-01T00:00:00Z'  all in this format
     pe_ratio: float
 
 @base_init
@@ -195,10 +220,11 @@ class Equity:
     realtime: bool
     ssid: int
 
-    reference: Reference
-    quote: Quote
-    regular: Regular
+    extended: Extended
     fundamental: Fundamental
+    quote: Quote
+    reference: Reference
+    regular: Regular
 
     puts: dict[datetime, list[Contract]]
     calls: dict[datetime, list[Contract]]
