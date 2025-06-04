@@ -1,7 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from functools import wraps
 import re
+
+import numpy as np
 
 """
 ExpirationDate
@@ -11,11 +13,6 @@ Equity
     Regular
     Fundamental
 Contract
-
-TODO:
-- [ ] Fix datetime attrs
-- [ ] standardize __init__ 
-- [ ] dividend_yield in Quote?? in aapl.json
 """
 
 
@@ -63,7 +60,7 @@ def base_init(cls):
 #                self.__setattr__(k, v)
 
 @base_init
-@dataclass(slots=True)
+@dataclass
 class ExpirationDate:
     expiration_date: datetime
     days_to_expiration: int
@@ -71,7 +68,7 @@ class ExpirationDate:
     standard: bool
 
 @base_init
-@dataclass(slots=True)
+@dataclass
 class Extended:
     ask_price: float
     ask_size: int
@@ -84,7 +81,7 @@ class Extended:
     trade_time: int
 
 @base_init
-@dataclass(slots=True)
+@dataclass
 class Reference:
     cusip: int
     description: str
@@ -96,7 +93,7 @@ class Reference:
     htb_rate: float
 
 @base_init
-@dataclass(slots=True)
+@dataclass()
 class Quote:
     _52_week_high: float
     _52_week_low: float
@@ -126,10 +123,10 @@ class Quote:
     security_status: str
     total_volume: float
     trade_time: float
-    volatility: float
+    volatility: float = np.nan
 
 @base_init
-@dataclass(slots=True)
+@dataclass
 class Regular:
     regular_market_last_price: float
     regular_market_last_size: float
@@ -138,7 +135,7 @@ class Regular:
     regular_market_trade_time: float
 
 @base_init
-@dataclass(slots=True)
+@dataclass
 class Fundamental:
     avg_10_days_volume: float
     avg_1_year_volume: float
@@ -212,7 +209,13 @@ class Contract:
     mini: bool
 
 @base_init
-@dataclass(slots=True)
+@dataclass
+class Options:
+    puts: dict[datetime, list[Contract]]
+    calls: dict[datetime, list[Contract]]
+
+@base_init
+@dataclass
 class Equity:
     symbol: str
     asset_main_type: str
@@ -226,6 +229,19 @@ class Equity:
     reference: Reference
     regular: Regular
 
-    puts: dict[datetime, list[Contract]]
-    calls: dict[datetime, list[Contract]]
+    # options: Options
+
+    def to_dict(self):
+        return {
+            'symbol': self.symbol,
+            'asset_main_type': self.asset_main_type,
+            'quote_type': self.quote_type,
+            'realtime': self.realtime,
+            'ssid': self.ssid,
+            **{ f'extended_{k}': v    for k, v in asdict(self.extended).items()    },
+            **{ f'fundamental_{k}': v for k, v in asdict(self.fundamental).items() },
+            **{ f'quote_{k}': v       for k, v in asdict(self.quote).items()       },
+            **{ f'reference_{k}': v   for k, v in asdict(self.reference).items()   },
+            **{ f'{k}': v             for k, v in asdict(self.regular).items()     }
+        }
 

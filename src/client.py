@@ -3,13 +3,16 @@ from my_logger import logger
 from parser import *
 
 from base64 import b64encode
+from datetime import datetime, timezone
 from getpass import getpass
 import multiprocessing
+from pprint import pp
 from time import time, sleep
 import webbrowser
 
-import requests
 from dotenv import dotenv_values, set_key
+import polars as pl
+import requests
 
 
 class Client:
@@ -121,7 +124,7 @@ class Client:
 
         self._update('ACCESS_TOKEN', access_token)
         self._update('REFRESH_TOKEN', refresh_token)
-        self._update('REFRESH_TOKEN_TIME', str(time()))
+        self._update('REFRESH_TOKEN_TIME', str(time()))  # TODO: does refresh toen update? or just access token? 
 
     def _market_data_request(self, endpoint: str, params: dict):
         """
@@ -228,8 +231,12 @@ class Client:
 def main():
     client = Client() 
     client.authenticate()
-    _ = client.quotes('AAPL')
-    _ = client.expiration_chain('')  # TODO: combine strs to comma separated str
+
+    equities = client.quotes('AAPL')
+    pl.from_dicts([ equity.to_dict() for equity in equities ]).write_csv(f'./data/aapl_{datetime.now(timezone.utc)}.csv')
+    
+    # _ = client.expiration_chain('')  # TODO: combine strs to comma separated str
+
 
 if __name__ == "__main__":
     main()
