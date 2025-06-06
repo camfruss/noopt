@@ -1,5 +1,10 @@
 **/__pycache__/
+**/*.egg-info
+
 tests/
 logs/
+data/[0-9]*
+
+
 
 .env
