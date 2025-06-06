@@ -1,5 +1,6 @@
 from models import *
 
+from collections import defaultdict
 import json
 
 
@@ -32,7 +33,7 @@ def parse_expiration_chain(response) -> list[ExpirationDate]:
 
     return expiration_dates
 
-def parse_chains(response) -> tuple[dict[datetime, list[Contract]], dict[datetime, list[Contract]]]:
+def parse_chains(response) -> Options:
     """
     endpoint: /chains
     
@@ -41,25 +42,27 @@ def parse_chains(response) -> tuple[dict[datetime, list[Contract]], dict[datetim
     def date_map(key):
         date_format = "%Y-%m-%d"
         
-        result = {}
+        result = defaultdict(list)
         for expr_date_str, contracts in response[key].items():
             date = datetime.strptime(expr_date_str.partition(':')[0], date_format)
             for _, data in contracts.items():
-                result[date] = Contract(**data[0])
+                result[date].append(Contract(**data[0]))
         return result
 
     calls = date_map('callExpDateMap')
     puts = date_map('putExpDateMap')
-    return calls, puts
+    result = Options(calls=calls, puts=puts)
 
+    return result
 
 def main():
     with open('./data/quotes.json', 'r') as f:
         response = json.loads(f.read())
     parse_quotes(response)
 
-    with open('./data/aapl.json', 'r') as f:
+    with open('./data/chains.json', 'r') as f:
         response = json.loads(f.read())
+    parse_chains(response)
 
     with open('./data/expirationchain.json', 'r') as f:
         response = json.loads(f.read())['expirationList']

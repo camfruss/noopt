@@ -15,6 +15,8 @@ import polars as pl
 import requests
 
 
+USE_CACHED = True  # load cached API responses
+
 class Client:
 
     _base_url = 'https://api.schwabapi.com'
@@ -56,7 +58,8 @@ class Client:
             self.authenticate()
 
     def _update(self, key_to_set, value_to_set):
-        """ """
+        """ 
+        """
         _ = set_key(self._env_path, key_to_set, value_to_set)
         logger.info(f'Updated {key_to_set} in {self._env_path}.')
 
@@ -134,10 +137,19 @@ class Client:
         """
         quotes(take in parameters) -> construct get_request -> parse response -> return
         """
-        return requests.get(f'{self._marketdata_base}{endpoint}',
-                     headers={'Authorization': f'Bearer {self._access_token}'},
-                     params=params,
-                     timeout=self._request_timeout)
+        if USE_CACHED:
+            with open(f'./data{endpoint}.json', 'r') as f:
+                response = json.loads(f.read())
+        else:
+            response = requests.get(
+                f'{self._marketdata_base}{endpoint}',
+                headers={'Authorization': f'Bearer {self._access_token}'},
+                params=params,
+                timeout=self._request_timeout
+            )
+            response = response.json()
+
+        return response
 
     def quotes(self,
         symbols: str | list[str],
@@ -156,7 +168,7 @@ class Client:
             'indicative': indicative,
         }
         response = self._market_data_request('/quotes', params=params)
-        equities = parse_quotes(response.json())
+        equities = parse_quotes(response)
         return equities
 
     def expiration_chain(self, symbol: str):
@@ -166,82 +178,68 @@ class Client:
             'symbol': symbol 
         }
         response = self._market_data_request('/expirationchain', params=params)
-        expiration_chain = parse_expiration_chain(response.json())
+        expiration_chain = parse_expiration_chain(response)
         return expiration_chain
 
-    def chains(self, *,
-        symbol: str,
-        contract_type: str | None,
-        strike_count: int | None,
-        include_underlying_quote: bool | None,
-        strategy: str | None,
-        interval: float | None,
-        strike: float | None,
-        range_: str | None,
-        from_date: datetime | None,
-        to_date: datetime | None,
-        volatility: float | None,
-        underlying_price: float | None,
-        interest_rate: float | None,
-        days_to_expiration: int | None,
-        expiration_month: str | None,
-        option_type: str | None,
-        entitlement: str | None
-    ):
+    def chains(self, symbol: str, **kwargs):
         """
         Keyword Arguments
         symbol -- single symbol 
-        contract_type -- contract type | values { CALL, PUT, ALL }
-        strike_count -- the number of strikes to return above/below ATM price
-        include_underlying_quote -- 
-        strategy -- values { SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL }
-        interval -- strike interval for SPREAD strategies
-        strike -- strike price 
-        range_ -- ITM, NTM, OTM
-        from_date -- yyyy-MM-dd 
-        to_date -- yyyy-MM-dd
-        volatility -- volatility to use in ANALYTICAL calculations
-        underlying_price -- underlying price to use in ANALYTICAL calculations
-        interest_rate -- interest rate to use in ANALYTICAL calculations
-        days_to_expiration -- days to expiration to use in ANALYTICAL calculations
-        expiration_month -- expiration month | values { JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL }
-        option_type -- 
-        entitlement -- { PN, NP, PP }
+        **contract_type : str -- contract type | values { CALL, PUT, ALL }
+        **strike_count : int -- the number of strikes to return above/below ATM price
+        **include_underlying_quote : bool -- 
+        **strategy : str -- values { SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL }
+        **interval : float -- strike interval for SPREAD strategies
+        **strike : float -- strike price 
+        **range : str -- ITM, NTM, OTM
+        **from_date : datetime -- yyyy-MM-dd 
+        **to_date : datetime -- yyyy-MM-dd
+        **volatility : float -- volatility to use in ANALYTICAL calculations
+        **underlying_price : float -- underlying price to use in ANALYTICAL calculations
+        **interest_rate : float -- interest rate to use in ANALYTICAL calculations
+        **days_to_expiration : int -- days to expiration to use in ANALYTICAL calculations
+        **expiration_month : str -- expiration month | values { JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL }
+        **option_type : str -- 
+        **entitlement : str -- { PN, NP, PP }
         """
         params = {
             'symbol': symbol,
-            'contractType': contract_type,
-            'strikeCount': strike_count,
-            'includeUnderlyingQuote': include_underlying_quote,
-            'strategy': strategy,
-            'interval': interval,
-            'strike': strike,
-            'range': range_,
-            'fromDate': from_date,
-            'toDate': to_date,
-            'volatility': volatility,
-            'underlyingPrice': underlying_price,
-            'interest_rate': interest_rate,
-            'daysToExpiration': days_to_expiration,
-            'expMonth': expiration_month,
-            'optionType': option_type,
-            'entitlement': entitlement
+            'contractType': kwargs.get('contract_type', 'ALL'),
+            'strikeCount': kwargs.get('strike_count', 5),
+            'includeUnderlyingQuote': kwargs.get('include_underlying_quote', False),
+            'strategy': kwargs.get('strategy'),
+            'interval': kwargs.get('interval'),
+            'strike': kwargs.get('strike'),
+            'range': kwargs.get('range'),
+            'fromDate': kwargs.get('from_date'),
+            'toDate': kwargs.get('to_date'),
+            'volatility': kwargs.get('volatility'),
+            'underlyingPrice': kwargs.get('underlying_price'),
+            'interest_rate': kwargs.get('interest_rate'),
+            'daysToExpiration': kwargs.get('days_to_expiration'),
+            'expMonth': kwargs.get('expiration_month'),
+            'optionType': kwargs.get('option_type'),
+            'entitlement': kwargs.get('entitlement')
         }
         params = { k:v for k,v in params.items() if v is not None }
         response = self._market_data_request('/chains', params=params)
-        chains = parse_chains(response.json())
+        chains = parse_chains(response)
         return chains
 
 def main():
     client = Client() 
-    client.authenticate()
+    #client.authenticate()
 
-    with open('./data/symbols.txt', 'r') as f:
-        symbols = f.readlines()
-    
-    equities = client.quotes(symbols)
+    #with open('./data/symbols.txt', 'r') as f:
+    #    symbols = f.readlines()
+    # 
+    #equities = client.quotes(symbols)
+    #pl.from_dicts([ equity.to_dict() for equity in equities ]).write_csv(f'./data/{datetime.now(timezone.utc).isoformat()}Z.csv')
 
-    pl.from_dicts([ equity.to_dict() for equity in equities ]).write_csv(f'./data/{datetime.now(timezone.utc).isoformat()}Z.csv')
+    chains = client.chains('AAPL')
+    _ = chains.to_dictl()
+    pl.from_dicts(chains.to_dictl()).write_csv(f'./data/{datetime.now(timezone.utc).isoformat()}Z.csv')
+
     
     # _ = client.expiration_chain('')  # TODO: combine strs to comma separated str
 

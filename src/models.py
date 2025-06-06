@@ -1,19 +1,7 @@
-from dataclasses import asdict, dataclass, fields, MISSING
+from dataclasses import dataclass, fields, MISSING
 from datetime import datetime
 from functools import wraps
 import re
-
-import numpy as np
-
-"""
-ExpirationDate
-Equity
-    Reference
-    Quote
-    Regular
-    Fundamental
-Contract
-"""
 
 
 def to_snake_case(name: str) -> str:
@@ -35,6 +23,18 @@ def to_snake_case(name: str) -> str:
     
     return name
 
+def _to_dict(obj) -> dict:
+    """
+    """
+    if obj is None:
+        return {}
+
+    data = {}
+    for fld in fields(obj):
+        value = getattr(obj, fld.name, None)
+        if value is not None and value is not MISSING:
+            data[fld.name] = value
+    return data
 
 def base_init(cls):
     """
@@ -53,11 +53,6 @@ def base_init(cls):
     
     cls.__init__ = init
     return cls
-
-#    def __init__(self, **kwargs):
-#        for key, v in kwargs.items():
-#            if (k := to_snake_case(key)) in self.__slots__:  # does NOT include inherited slots
-#                self.__setattr__(k, v)
 
 @base_init
 @dataclass
@@ -214,6 +209,15 @@ class Options:
     puts: dict[datetime, list[Contract]]
     calls: dict[datetime, list[Contract]]
 
+    def to_dictl(self) -> list[dict]:
+        result = []
+        for d in [self.puts, self.calls]:
+            for _, contracts in d.items():
+                for contract in contracts:
+                    result.append(_to_dict(contract))
+
+        return result
+
 @base_init
 @dataclass
 class Equity:
@@ -229,20 +233,7 @@ class Equity:
     reference: Reference
     regular: Regular
 
-    # options: Options
-
     def to_dict(self):
-        def _to_dict(obj):
-            if obj is None:
-                return {}
-
-            data = {}
-            for fld in fields(obj):
-                value = getattr(obj, fld.name, None)
-                if value is not None and value is not MISSING:
-                    data[fld.name] = value
-            return data
-
         return {
             'symbol': self.symbol,
             'asset_main_type': self.asset_main_type,
