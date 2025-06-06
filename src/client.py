@@ -46,6 +46,10 @@ class Client:
         if (auto_update_token):
             self._token_daemon.start()
 
+    @staticmethod
+    def _str_format(symbols: str | list[str]) -> str:
+        return ','.join(symbols) if isinstance(symbols, list) else str  # type: ignore
+
     def _refresh_daemon(self):
         while True:
             sleep(self._access_token_timeout - 60)
@@ -147,7 +151,7 @@ class Client:
         indicative --
         """
         params = {
-            'symbols': symbols,
+            'symbols': Client._str_format(symbols),
             'fields': fields,
             'indicative': indicative,
         }
@@ -232,8 +236,12 @@ def main():
     client = Client() 
     client.authenticate()
 
-    equities = client.quotes('AAPL')
-    pl.from_dicts([ equity.to_dict() for equity in equities ]).write_csv(f'./data/aapl_{datetime.now(timezone.utc)}.csv')
+    with open('./data/symbols.txt', 'r') as f:
+        symbols = f.readlines()
+    
+    equities = client.quotes(symbols)
+
+    pl.from_dicts([ equity.to_dict() for equity in equities ]).write_csv(f'./data/{datetime.now(timezone.utc).isoformat()}Z.csv')
     
     # _ = client.expiration_chain('')  # TODO: combine strs to comma separated str
 

@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, fields, MISSING
 from datetime import datetime
 from functools import wraps
 import re
@@ -123,7 +123,7 @@ class Quote:
     security_status: str
     total_volume: float
     trade_time: float
-    volatility: float = np.nan
+    volatility: float
 
 @base_init
 @dataclass
@@ -232,16 +232,27 @@ class Equity:
     # options: Options
 
     def to_dict(self):
+        def _to_dict(obj):
+            if obj is None:
+                return {}
+
+            data = {}
+            for fld in fields(obj):
+                value = getattr(obj, fld.name, None)
+                if value is not None and value is not MISSING:
+                    data[fld.name] = value
+            return data
+
         return {
             'symbol': self.symbol,
             'asset_main_type': self.asset_main_type,
             'quote_type': self.quote_type,
             'realtime': self.realtime,
             'ssid': self.ssid,
-            **{ f'extended_{k}': v    for k, v in asdict(self.extended).items()    },
-            **{ f'fundamental_{k}': v for k, v in asdict(self.fundamental).items() },
-            **{ f'quote_{k}': v       for k, v in asdict(self.quote).items()       },
-            **{ f'reference_{k}': v   for k, v in asdict(self.reference).items()   },
-            **{ f'{k}': v             for k, v in asdict(self.regular).items()     }
+            **{ f'extended_{k}': v    for k, v in _to_dict(self.extended).items() },
+            **{ f'fundamental_{k}': v for k, v in _to_dict(self.fundamental).items() },
+            **{ f'quote_{k}': v       for k, v in _to_dict(self.quote).items() },
+            **{ f'reference_{k}': v   for k, v in _to_dict(self.reference).items() },
+            **{ f'{k}': v             for k, v in _to_dict(self.regular).items() }
         }
 
