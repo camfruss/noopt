@@ -5,6 +5,4 @@ tests/
 logs/
 data/[0-9]*
 
-
-
 .env

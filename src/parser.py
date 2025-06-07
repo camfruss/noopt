@@ -1,3 +1,4 @@
+from my_logger import logger
 from models import *
 
 from collections import defaultdict
@@ -8,6 +9,8 @@ def parse_quotes(response) -> list[Equity]:
     """
     endpoint: /quotes
     """
+    logger.info('Parsing quotes')
+
     equities = []
     for _, value in response.items():
         if value.get('assetMainType', '') != 'EQUITY':
@@ -27,6 +30,8 @@ def parse_expiration_chain(response) -> list[ExpirationDate]:
     """
     Gets series of expiration dates for an optionable symbol
     """
+    logger.info('Parsing expiration chain')
+
     expiration_dates = []
     for elm in response:
         expiration_dates.append(ExpirationDate(**elm))
@@ -39,6 +44,8 @@ def parse_chains(response) -> Options:
     
     Gets pair of call and put contracts
     """
+    logger.info('Parsing chains')
+
     def date_map(key):
         date_format = "%Y-%m-%d"
         
