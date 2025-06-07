@@ -1,11 +1,15 @@
-
 class _Config:
 
     def __init__(self):
         self._params = {
+            'use_cache': True,
             'verbose': False,
             'write_on_response': True
         }
+
+    @property
+    def use_cache(self):
+        return self._params.get('use_cache')
 
     @property
     def verbose(self):
