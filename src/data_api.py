@@ -3,6 +3,7 @@ from config import config
 from parser import *
 
 import json
+from typing import overload
 
 import requests
 
@@ -29,13 +30,15 @@ def _market_data_request(endpoint: str, params: dict):
 
     return response
 
-
+@overload
 def quotes(
-    symbols: str | list[str],
+    symbols: list[str],
     fields: str | list[str] = 'all',
     indicative: bool = False
 ):
     """
+    Get quotes by list of symbols
+
     Arguments
     symbols -- 
     fields -- { quote, fundamental, extended, reference, regular, all }
@@ -49,6 +52,19 @@ def quotes(
     response = _market_data_request('/quotes', params=params)
     equities = parse_quotes(response)
     return equities
+
+@overload
+def quotes(symbol: str, fields: str | list[str]):
+    """
+    Get quote by a single symbol
+
+    symbol -- 
+    fields -- 
+    """
+    ...
+
+def quotes():
+    ...
 
 def expiration_chain(symbol: str):
     """
@@ -103,3 +119,86 @@ def chains(symbol: str, **kwargs):
     chains = parse_chains(response)
     return chains
 
+def pricehistory(
+    symbols: str,
+    period_type: str,
+    period: int, 
+    frequency_type: str,
+    frequency: int,
+    start_date: datetime,
+    end_date: datetime,
+    need_extended_hours_data: bool,
+    need_previous_close: bool
+):
+    """
+    symbol
+    periodType -- { day, month, year, ytd }
+    period -- the number of chart period types with default *
+        day -- 1, 2, 3, 4, 5, 10*
+        month -- 1*, 2, 3, 6
+        year -- 1*, 2, 3, 5, 10, 15, 20
+        ytd -- 1*
+    frequency_type -- { minute, daily, weekly, monthly }
+    frequency -- the time frequency duration
+    start_date -- defaults to (end_date - period) excluding weekends, holidays  # UNIX Epoch milliseconds
+    end_date -- defaults to market close of previous business day
+    need_extended_hours_data -- need extended hours data
+    need_previous_close -- need previous close price/date
+    """
+    ...
+
+def movers(
+    symbol_id: str,
+    sort: str,
+    frequency: int
+):
+    """
+    Get a list of top 10 securities movers for a specific index    
+    symbol_id -- index symbol
+    sort -- { volume, trades, percent_change_[up|down] }
+    frequency -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
+    """
+    ...
+
+@overload
+def markets(markets: list[str], date: datetime):
+    """
+    List of markets
+
+    markets -- { equity, option, bond, forex, future }
+    date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+    """
+    ...
+
+@overload
+def markets(market_id: str, date: datetime):
+    """
+    Get market hours for date in the future for a single market
+
+    markets -- { equity, option, bond, forex, future }
+    date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+    """
+    ...
+
+def markets(markets, date):
+    return
+
+@overload
+def instruments(symbol: str, projection: str):
+    """
+    symbol -- symbol of a security
+    projection -- { symbol-search, symbol-regex, desc-search, desc-regex, search, fundamental }
+    """
+    ...
+
+@overload
+def instruments(cusip_id: str):
+    """
+    Get basic instrument details
+
+    cusip_id -- cusip of a security
+    """
+    ...
+
+def instruments():
+    return
