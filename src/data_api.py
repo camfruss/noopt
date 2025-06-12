@@ -3,9 +3,11 @@ from config import config
 from parser import *
 
 import json
-from typing import overload
 
 import requests
+
+# remove none or ''
+# log unused kwargs / words that are not used
 
 
 _base_url = 'https://api.schwabapi.com'
@@ -30,12 +32,7 @@ def _market_data_request(endpoint: str, params: dict):
 
     return response
 
-@overload
-def quotes(
-    symbols: list[str],
-    fields: str | list[str] = 'all',
-    indicative: bool = False
-):
+def quotes(symbols: list[str], **kwargs):
     """
     Get quotes by list of symbols
 
@@ -43,20 +40,19 @@ def quotes(
         symbols -- 
 
     Keyword Arguments:
-        fields -- { quote, fundamental, extended, reference, regular, all }
-        indicative --
+        fields -- { quote, fundamental, extended, reference, regular, *all }
+        indicative : bool --
     """
     params = {
         'symbols': _str_format(symbols),
-        'fields': fields,
-        'indicative': indicative,
+        'fields': kwargs.get('fields'),
+        'indicative': kwargs.get('indicative'),
     }
     response = _market_data_request('/quotes', params=params)
     equities = parse_quotes(response)
     return equities
 
-@overload
-def quotes(symbol: str, fields: str | list[str] = ''):
+def quote(symbol: str, fields: str | list[str] = ''):
     """
     Get quote by a single symbol
 
@@ -66,9 +62,6 @@ def quotes(symbol: str, fields: str | list[str] = ''):
     Keyword Arguments:
         fields -- request for a subset of data { quote, fundamental, extended, reference, regular, all* }
     """
-    ...
-
-def quotes():
     ...
 
 def chains(symbol: str, **kwargs):
@@ -120,7 +113,7 @@ def chains(symbol: str, **kwargs):
     chains = parse_chains(response)
     return chains
 
-def expiration_chain(symbol: str):
+def expirationchain(symbol: str):
     """
     Get Option Expiration (Series) information for an optional symbol. Does not include individual
     options contracts for the underlying.
@@ -133,45 +126,34 @@ def expiration_chain(symbol: str):
     expiration_chain = parse_expiration_chain(response)
     return expiration_chain
 
-def pricehistory(
-    symbols: str,
-    period_type: str,
-    period: int, 
-    frequency_type: str,
-    frequency: int,
-    start_date: datetime,
-    end_date: datetime,
-    need_extended_hours_data: bool,
-    need_previous_close: bool
-):
+def pricehistory(symbol: str, **kwargs):
     """
     Get historical Open, High, Low, Close, Volume for a given frequency (aggregation). Frequency available is
     dependent on period_type. Date format is in EPOCH milliseconds.
 
     Arguments:
-    symbol
+        symbol
 
     Keyword Arguments:
-        periodType -- { day, month, year, ytd }
-        period -- the number of chart period types with default *
+        period_type : str -- { day, month, year, ytd }
+        period : int -- the number of chart period types with default *
             day -- 1, 2, 3, 4, 5, 10*
             month -- 1*, 2, 3, 6
             year -- 1*, 2, 3, 5, 10, 15, 20
             ytd -- 1*
-        frequency_type -- { minute, daily, weekly, monthly }
-        frequency -- the time frequency duration
-        start_date -- defaults to (end_date - period) excluding weekends, holidays  # UNIX Epoch milliseconds
-        end_date -- defaults to market close of previous business day
-        need_extended_hours_data -- need extended hours data
-        need_previous_close -- need previous close price/date
+        frequency_type : str -- { minute, daily, weekly, monthly }
+        frequency : int -- the time frequency duration
+        start_date : str-- defaults to (end_date - period) excluding weekends, holidays  # UNIX Epoch milliseconds
+        end_date : str -- defaults to market close of previous business day
+        need_extended_hours_data : bool -- need extended hours data
+        need_previous_close : bool -- need previous close price/date
     """
-    ...
+    params = {
+        'symbol': symbol,
+        'periodType': kwargs.get('period_type')
+    }
 
-def movers(
-    symbol_id: str,
-    sort: str,
-    frequency: int
-):
+def movers(symbol_id: str, **kwargs):
     """
     Get a list of top 10 securities movers for a specific index    
 
@@ -181,44 +163,47 @@ def movers(
                        OPTION_PUT, OPTION_CALL }
 
     Keyword Arguments:
-        sort -- { VOLUME, TRADES, PERCENT_CHANGE_[UP|DOWN] }
-        frequency -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
+        sort : str -- { VOLUME, TRADES, PERCENT_CHANGE_[UP|DOWN] }
+        frequency : int -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
     """
-    ...
+    params = {
+        'symbol_id': symbol_id
+    }
 
-@overload
-def markets(markets: list[str], date: str):
+def markets(markets: list[str], **kwargs):
     """
     Get market hours in the future for different markets
+    endpoint: /markets 
 
     Arguments:
         markets -- { equity, option, bond, forex, future }
 
     Keyword Arguments:
-        date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+        date : str -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
-    ...
+    params = {
+        'markets': markets  # market_id if only 1 amrket
+    }
 
-@overload
-def markets(market_id: str, date: str):
+def market(market_id: str, **kwargs):
     """
-    Get market hours for date in the future for a single market
+    Get market hours in the future for a single market
+    endpoint: /markets/{market_id}
 
     Arguments:
-        markets -- { equity, option, bond, forex, future }
+        market_id -- { equity, option, bond, forex, future }
 
     Keyword Arguments:
-        date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+        date : str -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
-    ...
+    params = {
+        'market_id': market_id
+    }
 
-def markets(markets, date):
-    return
-
-@overload
 def instruments(symbol: str, projection: str):
     """
     Get instruments by symbols and projections
+    endpoint: /instruments
 
     Arguments:
         symbol -- symbol of a security
@@ -226,15 +211,13 @@ def instruments(symbol: str, projection: str):
     """
     ...
 
-@overload
-def instruments(cusip_id: str):
+def instrument(cusip_id: str):
     """
     Get basic instrument by specific cusip
+    endpoint: /instruments/{cusip_id}
 
     Arguments:
         cusip_id -- cusip of a security
     """
     ...
 
-def instruments():
-    return
