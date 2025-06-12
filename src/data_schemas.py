@@ -58,17 +58,6 @@ def base_init(cls):
     cls.__init__ = init
     return cls
 
-class Bond:
-    cusip: str
-    symbol: str
-    description: str
-    exchange: str
-    asset_type: AssetType
-    bond_factor: str
-    bond_multiplier: str
-    bond_price: int
-    type_: AssetType 
-
 class FundamentalInst:
     symbol: str
     high_52: float
@@ -137,18 +126,17 @@ class Instrument:
     asset_type: AssetType
     type_: AssetType 
     
-class InstrumentResponse:
-    cusip: str
-    symbol: str
-    description: str
-    exchange: str
-    asset_type: AssetType
+class Bond(Instrument):
+    bond_factor: str
+    bond_multiplier: str
+    bond_price: int
+
+class InstrumentResponse(Instrument):
     bond_multiplier: str
     bond_price: int
     fundamental: FundamentalInst
     instrument_info: Instrument
     bond_instrument_info: Bond
-    type_: AssetType 
 
 class Hours:
     date: str
@@ -189,14 +177,37 @@ class CandleList:
     previous_clase_date: int
     previous_clase_date_iso_8601: str  # yyyy-MM-dd
     symbol: str
+    type_: AssetType 
 
-class EquityResponse:
-    """ Quote info of Equity security """
+class Fundamental:
+    """ Fundamentals of a security """
+    avg_10_days_volume: float
+    avg_1_year_volume: float
+    declaration_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    div_amount: float
+    div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    div_freq: DivFreq
+    div_pay_amount: float
+    div_yield: float
+    epis: float
+    fund_leverage_factor: float
+    fund_strategy: FundStrategy
+    next_div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    next_div_pay_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    pe_ratio: float
+
+# ----- Response -----
+# Response schemas
+
+class Response:
     asset_main_type: AssetMainType
-    asset_sub_type: EquityAssetSubType
     ssid: int
     symbol: str
     realtime: bool
+
+class EquityResponse(Response):
+    """ Quote info of Equity security """
+    asset_sub_type: EquityAssetSubType
     quote_type: QuoteType
     extended: ExtendedMarket
     fundamental: Fundamental
@@ -204,17 +215,55 @@ class EquityResponse:
     reference: ReferenceEquity
     regular: RegularMarket
 
-class QuoteError:
-    """ Partial or Custom errors per request """
-    invalid_cusips: list[str]
-    invalid_ssids: list[int]
-    invalid_symbols: list[str]
+class ForexResponse(Response):
+    quote: QuoteForex
+    reference: ReferenceForex
 
-class ExtendedMarket:
+class FutureOptionResponse(Response):
+    quote: QuoteFutureOption
+    reference: ReferenceFutureOption
+
+class FutureResponse(Response):
+    quote: QuoteFuture
+    reference: ReferenceFuture
+
+class IndexResponse(Response):
+    quote: QuoteIndex
+    reference: ReferenceIndex
+
+class MutualFundResponse(Response):
+    asset_sub_type: MutualFundAssetSubType
+    fundamental: Fundamental
+    quote: QuoteMutualFund
+    reference: ReferenceMutualFund
+
+class OptionResponse(Response):
+    quote: QuoteOption
+    reference: ReferenceOption
+
+# ----- Quote -----
+# Quote schemas
+
+class Quote:
+    _52_week_high: float
+    _52_week_low: float
+    close_price: float
+    high_price: float
+    last_price: float
+    low_price: float
+    net_change: float
+    open_price: float
+    security_status: str
+    total_volume: int
+    trade_time: int
+
+class AskBid:
     ask_price: float
     ask_size: int
     bid_price: float
     bid_size: int
+
+class ExtendedMarket(AskBid):
     last_price: float
     last_size: int
     mark: float
@@ -222,70 +271,55 @@ class ExtendedMarket:
     total_volume: int
     trade_time: int
 
-class ForexResponse:
-    asset_main_type: AssetMainType
-    ssid: int
-    symbol: str
-    realtime: bool
-    quote: QuoteForex
-    reference: ReferenceForex
+class QuoteEquity(Quote, AskBid):
+    ask_mic_id: str
+    ask_time: int
+    bid_mic_id: str
+    last_mic_id: str
+    mark: float
+    mark_change: float
+    mark_percent_change: float
+    net_percent_change: float
+    quote_time: int
+    volatility: float
 
-class Fundamental:
-    ...
+class QuoteForex(Quote, AskBid):
+    mark: float
+    net_percent_change: float
+    quote_time: int
+    tick: float  # tick price
+    tick_amount: float
 
-class FutureOptionResponse:
-    asset_main_type: AssetMainType
-    ssid: int
-    symbol: str
-    realtime: bool
-    quote: QuoteFutureOption
-    reference: ReferenceFutureOption
+class QuoteFuture(Quote, AskBid):
+    ask_mic_id: str
+    ask_time: int
+    bid_mic_id: str
+    bid_time: int
+    future_percent_change: float
+    last_mic_id: str
+    last_size: int
+    mark: float
+    open_interest: int
+    quote_time: int
+    quoted_in_session: bool
+    settle_time: int
+    tick: float
+    tick_amount: float
 
-class FutureResponse:
-    asset_main_type: AssetMainType
-    ssid: int
-    symbol: str
-    realtime: bool
-    quote: QuoteFuture
-    reference: ReferenceFuture
-
-class IndexResponse:
-    asset_main_type: AssetMainType
-    ssid: int
-    symbol: str
-    realtime: bool
-    quote: QuoteIndex
-    reference: ReferenceIndex
-
-class MutualFundResponse:
-    asset_main_type: AssetMainType
-    asset_sub_type: MutualFundAssetSubType
-    ssid: int
-    symbol: str
-    realtime: bool
-    fundamental: Fundamental
-    quote: QuoteMutualFund
-    reference: ReferenceMutualFund
-
-class OptionResponse:
-    asset_main_type: AssetMainType
-    ssid: int
-    symbol: str
-    realtime: bool
-    quote: QuoteOption
-    reference: ReferenceOption
-
-class QuoteEquity:
-    ...
-
-class QuoteForex:
-    ...
-
-class QuoteFuture:
-    ...
-
-class QuoteFutureOption:
-    ...
+class QuoteFutureOption(Quote, AskBid):
+    ask_mic_id: str
+    bid_mic_id: str
+    last_mic_id: str
+    last_size: int
+    mark: float
+    mark_change: float
+    open_interest: int
+    net_percent_change: float
+    open_interest: int
+    quote_time: int
+    settlement_price: float
+    tick: float
+    tick_amount: float
 
 class QuoteIndex:
     _52_week_high: float
@@ -323,17 +357,28 @@ class QuoteRequest:
     realtime: bool
     indicative: bool
 
+class QuoteError:
+    """ Partial or Custom errors per request """
+    invalid_cusips: list[str]
+    invalid_ssids: list[int]
+    invalid_symbols: list[str]
+
 class QuoteResponse:
     data: dict[str, QuoteResponseObject]  # key is symbol
 
 class QuoteResponseObject:
-    data: Response | QuoteError  # TODO
+    data: Quote | QuoteError
 
-class ReferenceEquity:
-    cusip: str
+# ----- Reference -----
+# All Reference Schemas
+
+class ReferenceIndex:
     description: str
     exchange: str
-    exchange_name: str
+    exchange_name: str = ''  # FutureOption is None, ReferenceMutualFund is MUTUAL_FUND
+
+class ReferenceEquity(ReferenceIndex):
+    cusip: str
     fsi_desc: str
     htb_quantity: int  # hard to borrow quatity
     htb_rate: float
@@ -341,19 +386,13 @@ class ReferenceEquity:
     is_shortable: bool
     otc_market_tier: str
 
-class ReferenceForex:
-    description: str
-    exchange: str
-    exchange_name: str
+class ReferenceForex(ReferenceIndex):
     is_tradable: bool
     market_maker: str
     product: str
     trading_hours: str
 
-class ReferenceFuture:
-    description: str
-    exchange: str
-    exchange_name: str
+class ReferenceFuture(ReferenceIndex):
     future_active_symbol: str
     future_expiration_date: int
     future_is_active: bool
@@ -363,26 +402,16 @@ class ReferenceFuture:
     future_trading_hours: str
     product: str
 
-class ReferenceFutureOption:
+class ReferenceFutureOption(ReferenceIndex):
     contract_type: ContractType
-    description: str
-    exchange: str
     multiplier: float
     expiration_date: int
     expiration_style: str
     strike_price: float
-    underlying: string
+    underlying: str 
 
-class ReferenceIndex:
-    description: str
-    exchange: str
-    exchange_name: str
-
-class ReferenceMutualFund:
+class ReferenceMutualFund(ReferenceIndex):
     cusip: str
-    description: str
-    exchange: str
-    exchange_name: str  # default: MUTUAL_FUND
 
 class ReferenceOption:
     ...
@@ -510,163 +539,6 @@ class Expiration:
     option_roots: str
 
 """
-
-
-@base_init
-@dataclass
-class ExpirationDate:
-    expiration_date: datetime
-    days_to_expiration: int
-    expiration_type: str  # W
-    standard: bool
-
-@base_init
-@dataclass
-class Extended:
-    ask_price: float
-    ask_size: int
-    bid_price: float
-    last_price: float
-    last_size: int
-    mark: float
-    quote_time: int
-    total_volume: int
-    trade_time: int
-
-@base_init
-@dataclass
-class Reference:
-    cusip: int
-    description: str
-    exchange: str
-    exchange_name: str
-    is_hard_to_borrow: bool
-    is_shortable: bool
-    htb_quantity: int
-    htb_rate: float
-
-@base_init
-@dataclass()
-class Quote:
-    _52_week_high: float
-    _52_week_low: float
-    ask_mic_id: str
-    ask_price: float
-    ask_size: float
-    ask_time: float
-    bid_mic_id: str
-    bid_price: float
-    bid_size: float
-    bid_time: float
-    close_price: float
-    high_price: float
-    last_mic_id: str
-    last_price: float
-    last_size: float
-    low_price: float
-    mark: float
-    mark_change: float
-    mark_percent_change: float
-    net_change: float
-    net_percent_change: float
-    open_price: float
-    post_market_change: float
-    post_market_percent_change: float
-    quote_time: float
-    security_status: str
-    total_volume: float
-    trade_time: float
-    volatility: float
-
-@base_init
-@dataclass
-class Regular:
-    regular_market_last_price: float
-    regular_market_last_size: float
-    regular_market_net_change: float
-    regular_market_percent_change: float
-    regular_market_trade_time: float
-
-@base_init
-@dataclass
-class Fundamental:
-    avg_10_days_volume: float
-    avg_1_year_volume: float
-    declaration_date: datetime
-    div_amount: float
-    div_ex_date: datetime
-    div_freq: float
-    div_pay_amount: float
-    div_pay_date: datetime
-    div_yield: float
-    eps: float
-    fund_leverage_factor: float
-    last_earnings_date: datetime
-    next_div_ex_date: datetime
-    next_div_pay_date: datetime  # '2025-05-01T00:00:00Z'  all in this format
-    pe_ratio: float
-
-@base_init
-@dataclass(slots=True)
-class Contract:
-    put_call: str  # { CALL, PUT }
-    symbol: str
-    description: str
-    exchange_name: str
-    bid: float
-    ask: float
-    last: float
-    mark: float
-    bid_size: float
-    ask_size: float
-    bid_ask_size: str  # "intXint"
-    last_size: float
-    high_price: float
-    low_price: float
-    open_price: float
-    close_price: float
-    total_volume: float
-    trade_time_in_long: datetime
-    quote_time_in_long: datetime
-    net_change: float
-    volatility: float
-    delta: float
-    gamma: float
-    theta: float
-    vega: float
-    rho: float
-    open_interest: float
-    time_value: float
-    theoretical_option_value: float
-    theoretical_volatility: float
-    strike_price: float
-    expiration_date: datetime
-    days_to_expiration: int
-    expiration_type: str  # W: weeklies
-    last_trading_day: datetime 
-    multiplier: int
-    settlement_type: str  # P: physical, C: cash
-    deliverable_note: str
-    percent_change: float
-    mark_change: float
-    mark_percent_change: float
-    intrinsic_value: float
-    extrinsic_value: float
-    option_root: str
-    exercise_type: str
-    high_52_week: float
-    low_52_week: float
-    penny_pilot: bool
-    non_standard: bool
-    in_the_money: bool
-    mini: bool
-
-@base_init
-@dataclass
-class Options:
-    puts: dict[datetime, list[Contract]]
-    calls: dict[datetime, list[Contract]]
-
     def to_dictl(self) -> list[dict]:
         result = []
         for d in [self.puts, self.calls]:
@@ -675,21 +547,6 @@ class Options:
                     result.append(_to_dict(contract))
 
         return result
-
-@base_init
-@dataclass
-class Equity:
-    symbol: str
-    asset_main_type: str
-    quote_type: str
-    realtime: bool
-    ssid: int
-
-    extended: Extended
-    fundamental: Fundamental
-    quote: Quote
-    reference: Reference
-    regular: Regular
 
     def to_dict(self):
         return {

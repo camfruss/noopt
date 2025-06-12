@@ -39,10 +39,12 @@ def quotes(
     """
     Get quotes by list of symbols
 
-    Arguments
-    symbols -- 
-    fields -- { quote, fundamental, extended, reference, regular, all }
-    indicative --
+    Arguments:
+        symbols -- 
+
+    Keyword Arguments:
+        fields -- { quote, fundamental, extended, reference, regular, all }
+        indicative --
     """
     params = {
         'symbols': _str_format(symbols),
@@ -54,46 +56,45 @@ def quotes(
     return equities
 
 @overload
-def quotes(symbol: str, fields: str | list[str]):
+def quotes(symbol: str, fields: str | list[str] = ''):
     """
     Get quote by a single symbol
 
-    symbol -- 
-    fields -- 
+    Arguments:
+        symbol -- symbol of instrument
+
+    Keyword Arguments:
+        fields -- request for a subset of data { quote, fundamental, extended, reference, regular, all* }
     """
     ...
 
 def quotes():
     ...
 
-def expiration_chain(symbol: str):
-    """
-    """
-    params = { 'symbol': symbol }
-    response = _market_data_request('/expirationchain', params=params)
-    expiration_chain = parse_expiration_chain(response)
-    return expiration_chain
-
 def chains(symbol: str, **kwargs):
     """
-    Keyword Arguments
-    symbol -- single symbol 
-    **contract_type : str -- contract type | values { CALL, PUT, ALL }
-    **strike_count : int -- the number of strikes to return above/below ATM price
-    **include_underlying_quote : bool -- 
-    **strategy : str -- values { SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL }
-    **interval : float -- strike interval for SPREAD strategies
-    **strike : float -- strike price 
-    **range : str -- ITM, NTM, OTM
-    **from_date : datetime -- yyyy-MM-dd 
-    **to_date : datetime -- yyyy-MM-dd
-    **volatility : float -- volatility to use in ANALYTICAL calculations
-    **underlying_price : float -- underlying price to use in ANALYTICAL calculations
-    **interest_rate : float -- interest rate to use in ANALYTICAL calculations
-    **days_to_expiration : int -- days to expiration to use in ANALYTICAL calculations
-    **expiration_month : str -- expiration month | values { JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL }
-    **option_type : str -- 
-    **entitlement : str -- { PN, NP, PP }
+    Get option chain for an optional symbol
+
+    Arguments:
+        symbol -- single symbol 
+
+    Keyword Arguments:
+        contract_type : str -- contract type | values { CALL, PUT, ALL }
+        strike_count : int -- the number of strikes to return above/below ATM price
+        include_underlying_quote : bool -- 
+        strategy : str -- values { SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL }
+        interval : float -- strike interval for SPREAD strategies
+        strike : float -- strike price 
+        range : str -- ITM, NTM, OTM
+        from_date : datetime -- yyyy-MM-dd 
+        to_date : datetime -- yyyy-MM-dd
+        volatility : float -- volatility to use in ANALYTICAL calculations
+        underlying_price : float -- underlying price to use in ANALYTICAL calculations
+        interest_rate : float -- interest rate to use in ANALYTICAL calculations
+        days_to_expiration : int -- days to expiration to use in ANALYTICAL calculations
+        expiration_month : str -- expiration month | values { JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC, ALL }
+        option_type : str -- 
+        entitlement : str -- { PN, NP, PP }
     """
     params = {
         'symbol': symbol,
@@ -119,6 +120,19 @@ def chains(symbol: str, **kwargs):
     chains = parse_chains(response)
     return chains
 
+def expiration_chain(symbol: str):
+    """
+    Get Option Expiration (Series) information for an optional symbol. Does not include individual
+    options contracts for the underlying.
+
+    Arguments:
+        symbol 
+    """
+    params = { 'symbol': symbol }
+    response = _market_data_request('/expirationchain', params=params)
+    expiration_chain = parse_expiration_chain(response)
+    return expiration_chain
+
 def pricehistory(
     symbols: str,
     period_type: str,
@@ -131,19 +145,25 @@ def pricehistory(
     need_previous_close: bool
 ):
     """
+    Get historical Open, High, Low, Close, Volume for a given frequency (aggregation). Frequency available is
+    dependent on period_type. Date format is in EPOCH milliseconds.
+
+    Arguments:
     symbol
-    periodType -- { day, month, year, ytd }
-    period -- the number of chart period types with default *
-        day -- 1, 2, 3, 4, 5, 10*
-        month -- 1*, 2, 3, 6
-        year -- 1*, 2, 3, 5, 10, 15, 20
-        ytd -- 1*
-    frequency_type -- { minute, daily, weekly, monthly }
-    frequency -- the time frequency duration
-    start_date -- defaults to (end_date - period) excluding weekends, holidays  # UNIX Epoch milliseconds
-    end_date -- defaults to market close of previous business day
-    need_extended_hours_data -- need extended hours data
-    need_previous_close -- need previous close price/date
+
+    Keyword Arguments:
+        periodType -- { day, month, year, ytd }
+        period -- the number of chart period types with default *
+            day -- 1, 2, 3, 4, 5, 10*
+            month -- 1*, 2, 3, 6
+            year -- 1*, 2, 3, 5, 10, 15, 20
+            ytd -- 1*
+        frequency_type -- { minute, daily, weekly, monthly }
+        frequency -- the time frequency duration
+        start_date -- defaults to (end_date - period) excluding weekends, holidays  # UNIX Epoch milliseconds
+        end_date -- defaults to market close of previous business day
+        need_extended_hours_data -- need extended hours data
+        need_previous_close -- need previous close price/date
     """
     ...
 
@@ -154,29 +174,41 @@ def movers(
 ):
     """
     Get a list of top 10 securities movers for a specific index    
-    symbol_id -- index symbol
-    sort -- { volume, trades, percent_change_[up|down] }
-    frequency -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
+
+    Arguments:
+        symbol_id -- index symbol
+                     { $DJI, $COMPX, $SPX, NYSE, NASDAQ, OTCBB, INDEX_ALL, EQUITY_ALL, OPTION_ALL, 
+                       OPTION_PUT, OPTION_CALL }
+
+    Keyword Arguments:
+        sort -- { VOLUME, TRADES, PERCENT_CHANGE_[UP|DOWN] }
+        frequency -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
     """
     ...
 
 @overload
-def markets(markets: list[str], date: datetime):
+def markets(markets: list[str], date: str):
     """
-    List of markets
+    Get market hours in the future for different markets
 
-    markets -- { equity, option, bond, forex, future }
-    date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+    Arguments:
+        markets -- { equity, option, bond, forex, future }
+
+    Keyword Arguments:
+        date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
     ...
 
 @overload
-def markets(market_id: str, date: datetime):
+def markets(market_id: str, date: str):
     """
     Get market hours for date in the future for a single market
 
-    markets -- { equity, option, bond, forex, future }
-    date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
+    Arguments:
+        markets -- { equity, option, bond, forex, future }
+
+    Keyword Arguments:
+        date -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
     ...
 
@@ -186,17 +218,21 @@ def markets(markets, date):
 @overload
 def instruments(symbol: str, projection: str):
     """
-    symbol -- symbol of a security
-    projection -- { symbol-search, symbol-regex, desc-search, desc-regex, search, fundamental }
+    Get instruments by symbols and projections
+
+    Arguments:
+        symbol -- symbol of a security
+        projection -- search by: { symbol-search, symbol-regex, desc-search, desc-regex, search, fundamental }
     """
     ...
 
 @overload
 def instruments(cusip_id: str):
     """
-    Get basic instrument details
+    Get basic instrument by specific cusip
 
-    cusip_id -- cusip of a security
+    Arguments:
+        cusip_id -- cusip of a security
     """
     ...
 
