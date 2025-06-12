@@ -1,6 +1,16 @@
 from enum import auto, Enum
 
 
+class AssetMainType(Enum):
+    BOND = auto()
+    EQUITY = auto()
+    FOREX = auto()
+    FUTURE = auto()
+    FUTURE_OPTION = auto()
+    INDEX = auto()
+    MUTUAL_FUND = auto()
+    OPTION = auto()
+
 class AssetType(Enum):
     BOND = auto()
     EQUITY = auto()
@@ -16,15 +26,19 @@ class AssetType(Enum):
     OPTION = auto()
     UNKNOWN = auto()
 
-class AssetMainType(Enum):
-    BOND = auto()
-    EQUITY = auto()
-    FOREX = auto()
-    FUTURE = auto()
-    FUTURE_OPTION = auto()
-    INDEX = auto()
-    MUTUAL_FUND = auto()
-    OPTION = auto()
+class ContractType(Enum):
+    P = auto()  # Put
+    C = auto()  # Call
+
+class DivFreq(Enum):
+    ONE = 1
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+    SIX = 6
+    ELEVEN = 11
+    TWELVE = 12
+    NONE = 0
 
 class EquityAssetSubType(Enum):
     COE = auto()
@@ -39,19 +53,9 @@ class EquityAssetSubType(Enum):
     RGT = auto()
     NONE = auto()
 
-class MutualFundAssetSubType(Enum):
-    OEF = auto()
-    CEF = auto()
-    MMF = auto()
-    NONE = auto()
-
-class ContractType(Enum):
-    P = auto()  # Put
-    C = auto()  # Call
-
-class SettlementType(Enum):
-    A = auto()  # AM
-    P = auto()  # PM
+class ExerciseType(Enum):
+    A = auto()  # American
+    E  = auto()  # European
 
 class ExpirationType(Enum):
     M = auto()  # End of Month
@@ -67,21 +71,18 @@ class FundStrategy(Enum):
     S = auto()  # Short
     NONE = auto()
 
-class ExerciseType(Enum):
-    A = auto()  # American
-    E  = auto()  # European
-
-class DivFreq(Enum):
-    ONE = 1
-    TWO = 2
-    THREE = 3
-    FOUR = 4
-    SIX = 6
-    ELEVEN = 11
-    TWELVE = 12
-    NONE = 0
+class MutualFundAssetSubType(Enum):
+    OEF = auto()
+    CEF = auto()
+    MMF = auto()
+    NONE = auto()
 
 class QuoteType(Enum):
     NBBO = auto()  # realtime
-    NFL = auto()  # Non-fee liable quote
+    NFL = auto()   # Non-fee liable quote
     NONE = auto()
+
+class SettlementType(Enum):
+    A = auto()  # AM
+    P = auto()  # PM
+

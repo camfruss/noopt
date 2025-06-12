@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from trader_enums import *
 
+from typing import Literal
+
 
 class AccountNumberHash:
     account_number: str
@@ -33,79 +35,161 @@ class OrderStrategy:
     orderLegs: list[OrderLeg]
 
 class OrderLeg:
-    ...
+    ask_price: float
+    bid_price: float
+    last_price: float
+    mark_price: float
+    projected_commission: float
+    quantity: float
+    final_symbol: str
+    leg_id: int
+    asset_type: AssetType
+    instruction: Instruction
 
 class OrderBalance:
-    ...
+    order_value: float
+    projected_available_fund: float
+    projected_buying_power: float
+    projected_commission: float
 
 class OrderValidationResult:
-    ...
+    alerts: list[OrderValidationDetail]
+    accepts: list[OrderValidationDetail]
+    rejects: list[OrderValidationDetail]
+    reviews: list[OrderValidationDetail]
+    warns: list[OrderValidationDetail]
 
 class OrderValidationDetail:
-    ...
-
-class APIRuleAction:
-    ...
+    validation_rule_name: str
+    message: str
+    activity_message: str
+    original_severity: APIRuleAction
+    override_name: str
+    override_severity: APIRuleAction
 
 class CommissionAndFee:
-    ...
+    commission: Commission
+    fee: Fees
+    true_commission: Commission
 
 class Commission:
-    ...
+    commission_legs: list[CommissionLeg]
 
 class CommissionLeg:
-    ...
+    commission_values: list[CommissionValue]
 
 class CommissionValue:
-    ...
+    value: float
+    type_: FeeType
 
 class Fees:
-    ...
+    fee_legs: list[FeeLeg]
 
 class FeeLeg:
-    ...
+    fee_values: list[FeeValue]
 
 class FeeValue:
-    ...
-
-class FeeType:
-    ...
+    value: float
+    type_: FeeType
 
 class Account:
-    ...
+    securities_account: SecuritiesAccount
 
 class DateParam:
-    ...
+    date: str  # yyyy-MM-dd'T'HH:mm:ss.SSSZ
 
-class Order:
-    ...
+class BaseOrder:
+    session: Session
+    duration: Duration
+    order_type: OrderType
+    cancel_time: str  # datetime
+    complex_order_strategy_type: ComplexOrderStrategyType
+    quantity: float
+    filled_quantity: float
+    remaining_quantity: float
+    release_time: str  # datetime
+    stop_price: float
+    stop_price_link_basis: StopPriceLinkBasis
+    stop_price_link_type: StopPriceLinkType
+    stop_price_offset: float
+    stop_type: StopType
+    price_link_basis: PriceLinkBasis
+    price_link_type: PriceLinkType
+    price: float
+    tax_lot_method: TaxLotMethod
+    order_leg_collection: list[OrderLegCollection]
+    activation_price: float
+    special_instruction: SpecialInstruction
+    order_strategy_type: OrderStrategyType
+    order_id: int
+    cancelable: bool
+    editable: bool
+    status: Status
+    entered_time: str  # datetime
+    close_time: str  # datetime
+    account_number: int
+    order_activity_collection: list[OrderActivity]
+    replacing_order_collection: list  # TODO
+    child_order_strategies: list  # TODO
+    status_description: str
 
-class OrderRequest:
-    ...
+class Order(BaseOrder):
+    requested_destination: RequestedDestination
+    tag: str
+
+class OrderRequest(BaseOrder):
+    destination_link_name: str    
 
 class PreviewOrder:
-    ...
+    order_id: int
+    order_strategy: OrderStrategy
+    order_validation_result: OrderValidationResult
+    commission_and_fee: CommissionAndFee
 
 class OrderActivity:
-    ...
+    activity_type: ActivityType
+    execution_type: ExecutionType
+    quantity: float
+    order_remaining_quantity: float
+    execution_legs: list[ExecutionLeg]
 
 class ExecutionLeg:
-    ...
+    leg_id: int
+    price: float
+    quantity: float
+    mismarked_quantity: float
+    instrument_id: int
+    time: str  # date-time
 
 class Position:
     ...
 
 class ServiceError:
-    ...
+    message: str
+    errors: list[str]
 
 class OrderLegCollection:
-    ...
+    order_leg_type: LegType
+    leg_id: int
+    instrument: AccountsInstrument
+    instruction: Instruction
+    position_effect: str
+    quantity: float
+    quantity_type: QuantityType
+    div_cap_gains: DivCapGainsType
+    to_symbol: str
 
 class SecuritiesAccount:
-    ...
+    data: MarginAccount | CashAccount
 
 class SecuritiesAccountBase:
-    ...
+    type_: Literal['CASH', 'MARGIN']
+    account_number: str
+    round_trips: int
+    is_day_trader: bool
+    is_closing_only_restricted: bool
+    pfcb_flag: bool
+    positions: list[Position]
 
 class MarginAccount:
     ...
@@ -125,71 +209,112 @@ class CashInitialBalance:
 class CashBalance:
     ...
 
-class TransactionBaseInstrument:
-    ...
+class BaseAsset:
+    asset_type: AssetType
+    cusip: str
+    symbol: str
+    description: str
+    instrument_id: int
+    net_change: float
 
-class AccountsBaseInstrument:
-    ...
+class TransactionBaseInstrument(BaseAsset):
+    pass
+
+class AccountsBaseInstrument(BaseAsset):
+    pass
 
 class AccountsInstrument:
-    ...
+    data: AccountXYZ
 
 class TransactionInstrument:
-    ...
+    data: TransactionCashEquivalent | CollectiveInvestment | Currency | TransactionEquity | \
+          TransactionFixedIncome | Forex | Future | Index | TransactionMutualFund | TransactionOption | \
+          Product
 
-class TransactionCashEquivalent:
-    ...
+class TransactionCashEquivalent(BaseAsset):
+    type_: CashType
 
-class CollectiveInvestment:
-    ...
+class CollectiveInvestment(BaseAsset):
+    type_: CollectiveType
 
-class Instruction:
-    ...
+class Currency(BaseAsset):
+    pass
 
-class AssetType:
-    ...
+class TransactionEquity(BaseAsset):
+    type_: EquityType 
 
-class Currency:
-    ...
+class TransactionFixedIncome(BaseAsset):
+    type_: FixedIncomeType
+    maturitiy_date: str  # date-time
+    factor: float
+    multiplier: float
+    variable_rate: float
 
-class TransactionEquity:
-    ...
-
-class TransactionFixedIncome:
-    ...
-
-class Forex:
-    ...
+class Forex(BaseAsset):
+    type_: ForexType
+    base_currency: Currency
+    counter_currency: Currency
 
 class Future:
-    ...
+    active_contract: bool
+    type_: FutureType
+    expiration_date: str  # date-time
+    last_trading_date: str  # date-time
+    first_notice_date: str  # datetime
+    multiplier: float
+    data: TransactionCashEquivalent | CollectiveInvestment | Currency | TransactionEquity | \
+          TransactionFixedIncome | Forex | Index | TransactionMutualFund | TransactionOption | \
+          Product
 
 class Index:
-    ...
+    active_contract: bool
+    type_: IndexType
+    data: TransactionCashEquivalent | CollectiveInvestment | Currency | TransactionEquity | \
+          TransactionFixedIncome | Forex | Future | TransactionMutualFund | TransactionOption | \
+          Product
 
-class TransactionMutualFund:
-    ...
+class TransactionMutualFund(BaseAsset):
+    fund_family_name: str
+    fund_family_symbol: str
+    fund_group: str
+    type_: MutualFundType  # TODO??
+    exchange_cutoff_time: str  # datetime
+    purchase_cutoff_time: str  # datetime
+    redemption_cutoff_time: str  # datetime
 
-class TransactionOption:
-    ...
+class TransactionOption(BaseAsset):
+    expiration_date: str  # datetime
+    option_deliberables: list[TransactionAPIOptionDeliverable]
+    put_call: ContractType
+    strike_price: float
+    type_: TransactionOptionType
+    underlying_symbol: str
+    underlying_cusip: str
+    deliverable: TransactionInstrument
 
-class Product:
-    ...
+class Product(BaseAsset):
+    type_: ProductType
 
-class AccountCashEquivalent:
-    ...
+class AccountCashEquivalent(BaseAsset):
+    type_: CashType  # TODO: check
 
-class AccountEquity:
-    ...
+class AccountEquity(BaseAsset):
+    pass
 
-class AccountFixedIncome:
-    ...
+class AccountFixedIncome(BaseAsset):
+    maturity_date: str   # date-time
+    factor: float
+    variable_rate: float
 
-class AccountMutualFund:
-    ...
+class AccountMutualFund(BaseAsset):
+    pass
 
-class AccountOption:
-    ...
+class AccountOption(BaseAsset):
+    option_deliverables: list[AccountAPIOptionDeliverable]
+    put_call: ContractType
+    option_multiplier: int
+    type_: TransactionOptionType  # TODO???
+    underlying_symbol: str
 
 class AccountAPIOptionDeliverable:
     symbol: str
