@@ -1,20 +1,6 @@
 from enum import auto, Enum
 
 
-class Strategy(Enum):
-    SINGLE = auto()
-    ANALYTICAL = auto()
-    COVERED = auto()
-    VERTICAL = auto()
-    CALENDAR = auto()
-    STRANGLE = auto()
-    STRADDLE = auto()
-    BUTTERFLY = auto()
-    CONDOR = auto()
-    DIAGONAL = auto()
-    COLLAR = auto()
-    ROLL = auto()
-
 class AssetMainType(Enum):
     BOND = auto()
     EQUITY = auto()
@@ -63,6 +49,16 @@ class EquityAssetSubType(Enum):
     RGT = auto()
     NONE = auto()
 
+class Exchanges(Enum):
+    IND = auto()
+    ASE = auto()
+    NYS = auto()
+    NAS = auto()
+    NAP = auto()
+    PAC = auto()
+    OPR = auto()
+    BATS = auto()
+
 class ExerciseType(Enum):
     A = auto()  # American
     E  = auto()  # European
@@ -95,4 +91,18 @@ class QuoteType(Enum):
 class SettlementType(Enum):
     A = auto()  # AM
     P = auto()  # PM
+
+class Strategy(Enum):
+    SINGLE = auto()
+    ANALYTICAL = auto()
+    COVERED = auto()
+    VERTICAL = auto()
+    CALENDAR = auto()
+    STRANGLE = auto()
+    STRADDLE = auto()
+    BUTTERFLY = auto()
+    CONDOR = auto()
+    DIAGONAL = auto()
+    COLLAR = auto()
+    ROLL = auto()
 

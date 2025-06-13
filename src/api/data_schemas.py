@@ -458,7 +458,7 @@ class Underlying(BaseModel):
     close: float
     delayed: bool
     description: str
-    exchange_name: Exchange
+    exchange_name: Exchanges
     fifty_two_week_high: float
     fifty_two_week_low: float
     high_price: float
@@ -476,7 +476,7 @@ class Underlying(BaseModel):
 
 class OptionDeliverables(BaseModel):
     asset_type: AssetType
-    currency_type: Currency
+    currency_type: str
     deliverable_units: str
     symbol: str
 
