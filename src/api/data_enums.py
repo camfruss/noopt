@@ -26,10 +26,6 @@ class AssetType(Enum):
     OPTION = auto()
     UNKNOWN = auto()
 
-class ContractType(Enum):
-    P = auto()  # Put
-    C = auto()  # Call
-
 class DivFreq(Enum):
     ONE = 1
     TWO = 2
