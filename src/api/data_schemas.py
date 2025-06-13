@@ -9,55 +9,76 @@ import re
 from pydantic import BaseModel
 
 
-def to_snake_case(name: str) -> str:
-    """
-    Requires: must be camelCase ... if leading w/ digit, first char must be uppercase.
+class Candle(BaseModel):
+    close: float
+    datetime: int
+    datetime_iso_8601: str  # yyyy-MM-dd
+    high: float
+    low: float
+    open_: float
+    volume: int
 
-    1. aBCDe01 -> a_BCDe01
-    2.         -> a_BCDe_01
-    3.         -> a_BC_De_01
-    4.         -> a_bc_de_01 
-    """
-    name = re.sub(r'(?<=[a-z0-9], [A-Z])', r'_\1', name)
-    name = re.sub(r'([0-9]+)', r'_\1', name)
-    name = re.sub(r'([A-Z]{2,}, [A-Z][a-z])', r'\1_\2', name)
-    name = name.lower()
+class CandleList(BaseModel):
+    candles: list[Candle]
+    data_type: AssetType 
+    empty: bool
+    previous_clase_date: int
+    previous_clase_date_iso_8601: str  # yyyy-MM-dd
+    previous_close: float
+    symbol: str
 
-    if name and name[0].isdigit():
-        name = '_' + name
-    
-    return name
+class Hours(BaseModel):
+    category: str
+    date: str
+    exchange: str
+    is_open: bool
+    market_type: AssetType
+    product: str
+    product_name: str
+    session_hours: dict[datetime, Interval]
 
-def _to_dict(obj) -> dict:
-    """
-    """
-    if obj is None:
-        return {}
+class Interval(BaseModel):
+    end: str
+    start: str
 
-    data = {}
-    for fld in fields(obj):
-        value = getattr(obj, fld.name, None)
-        if value is not None and value is not MISSING:
-            data[fld.name] = value
-    return data
+class Screener(BaseModel):
+    """ Security info of most moved in an index """
+    change: float
+    description: str
+    direction: str  # { up, down }
+    last: float
+    symbol: str
+    total_volume: int
 
-def base_init(cls):
-    """
-    decorator that overwrites the class's __init__ to support camel to snake case conversions
-    """
-    original = getattr(cls, '__init__', None)
+class Instrument(BaseModel):
+    asset_type: AssetType
+    cusip: str
+    data_type: AssetType 
+    description: str
+    exchange: str
+    symbol: str
 
-    @wraps(original)  # type: ignore
-    def init(self, **kwargs):
-        for key, value in kwargs.items():
-            snake_key = to_snake_case(key)
-            try:
-                setattr(self, snake_key, value)
-            except AttributeError:
-                pass
-    
-    cls.__init__ = init
-    return cls
+class Bond(Instrument, BaseModel):
+    bond_factor: str
+    bond_multiplier: str
+    bond_price: int
+
+class Fundamental(BaseModel):
+    """ Fundamentals of a security """
+    avg_10_days_volume: float
+    avg_1_year_volume: float
+    declaration_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    div_amount: float
+    div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    div_freq: DivFreq
+    div_pay_amount: float
+    div_yield: float
+    epis: float
+    fund_leverage_factor: float
+    fund_strategy: FundStrategy
+    next_div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    next_div_pay_date: str  # yyyy-MM-ddTHH:mm:ssZ
+    pe_ratio: float
 
 class FundamentalInst(BaseModel):
     avg_10_days_volume: int
@@ -119,84 +140,6 @@ class FundamentalInst(BaseModel):
     vol_1_day_avg: float
     vol_3_month_avg: float
 
-class Instrument(BaseModel):
-    asset_type: AssetType
-    cusip: str
-    data_type: AssetType 
-    description: str
-    exchange: str
-    symbol: str
-
-class Bond(Instrument, BaseModel):
-    bond_factor: str
-    bond_multiplier: str
-    bond_price: int
-
-class InstrumentResponse(Instrument, BaseModel):
-    bond_instrument_info: Bond
-    bond_multiplier: str
-    bond_price: int
-    fundamental: FundamentalInst
-    instrument_info: Instrument
-
-class Hours(BaseModel):
-    category: str
-    date: str
-    exchange: str
-    is_open: bool
-    market_type: AssetType
-    product: str
-    product_name: str
-    session_hours: dict[datetime, Interval]
-
-class Interval(BaseModel):
-    end: str
-    start: str
-
-class Screener(BaseModel):
-    """ Security info of most moved in an index """
-    change: float
-    description: str
-    direction: str  # { up, down }
-    last: float
-    symbol: str
-    total_volume: int
-
-class Candle(BaseModel):
-    close: float
-    datetime: int
-    datetime_iso_8601: str  # yyyy-MM-dd
-    high: float
-    low: float
-    open_: float
-    volume: int
-
-class CandleList(BaseModel):
-    candles: list[Candle]
-    data_type: AssetType 
-    empty: bool
-    previous_clase_date: int
-    previous_clase_date_iso_8601: str  # yyyy-MM-dd
-    previous_close: float
-    symbol: str
-
-class Fundamental(BaseModel):
-    """ Fundamentals of a security """
-    avg_10_days_volume: float
-    avg_1_year_volume: float
-    declaration_date: str  # yyyy-MM-ddTHH:mm:ssZ
-    div_amount: float
-    div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
-    div_freq: DivFreq
-    div_pay_amount: float
-    div_yield: float
-    epis: float
-    fund_leverage_factor: float
-    fund_strategy: FundStrategy
-    next_div_ex_date: str  # yyyy-MM-ddTHH:mm:ssZ
-    next_div_pay_date: str  # yyyy-MM-ddTHH:mm:ssZ
-    pe_ratio: float
-
 # ----- Response -----
 # Response schemas
 
@@ -227,6 +170,13 @@ class FutureOptionResponse(Response, BaseModel):
 class FutureResponse(Response, BaseModel):
     quote: QuoteFuture
     reference: ReferenceFuture
+
+class InstrumentResponse(Instrument, BaseModel):
+    bond_instrument_info: Bond
+    bond_multiplier: str
+    bond_price: int
+    fundamental: FundamentalInst
+    instrument_info: Instrument
 
 class IndexResponse(Response, BaseModel):
     quote: QuoteIndex
@@ -347,8 +297,28 @@ class QuoteMutualFund(BaseModel):
     total_volume: int
     trade_time: int
 
-class QuoteOption(BaseModel):
-    ...
+class QuoteOption(Quote, BaseModel):
+    delta: float
+    gamma: float
+    implied_yield: float
+    ind_ask_price: float
+    ind_bid_price: float
+    ind_quote_time: int  # datetime
+    last_size: int
+    mark: float
+    mark_change: float
+    mark_percent_change: float
+    money_intrinsic_value: float
+    net_percent_change: float
+    open_interest: float
+    quote_time: int  # datetime
+    rho: float
+    theoretical_option_value: float
+    theta: float
+    time_value: float
+    underlying_price: float
+    vega: float
+    volatility: float
 
 class QuoteRequest(BaseModel):
     cusips: list[str]
@@ -415,7 +385,25 @@ class ReferenceMutualFund(ReferenceIndex, BaseModel):
     cusip: str
 
 class ReferenceOption(BaseModel):
-    ...
+    """ Reference data of Option security """
+    contract_type: ContractType
+    cusip: str
+    days_to_expiration: float
+    deliverables: str
+    description: str
+    exchange: str
+    exchange_name: str
+    exercise_type: ExerciseType
+    expiration_day: int  # [1, 31]
+    expiration_month: int  # [1, 12]
+    expiration_type: ExpirationType
+    expiration_year: int
+    is_penny_pilot: bool  # Is this contract part of the Penny Pilot program
+    last_trading_day: int
+    multiplier: float
+    settlement_type: SettlementType
+    strike_price: float
+    underlying: str  # company, index, or fund name
 
 class RegularMarket(BaseModel):
     regular_market_last_price: float 
@@ -424,6 +412,8 @@ class RegularMarket(BaseModel):
     regular_market_percent_change: float 
     regular_market_trade_time: int 
 
+# ----- Error -----
+
 class ErrorResponse(BaseModel):
     errors: list[Error]
 
@@ -431,7 +421,7 @@ class Error(BaseModel):
     detail: str  # detailed error description
     id_: str
     source: ErrorSource
-    status: HTTPStatus  # 400, 01, 04, 500
+    status: int  # 400, 01, 04, 500
     title: str  # short error description
 
 class ErrorSource(BaseModel):
@@ -439,11 +429,25 @@ class ErrorSource(BaseModel):
     parameter: str  # parameter name which leads to this error message
     pointer: list[str]  # list of attributes which lead to this error message
 
+# ----- Options -----
+
 class OptionChain(BaseModel):
-    ...
+    call_exp_date_map: dict[str, OptionContractMap]
+    days_to_expiration: float
+    interest_rate: float
+    interval: float
+    is_delayed: bool
+    is_index: bool
+    put_exp_date_map: dict[str, OptionContractMap]
+    status: str
+    strategy: Strategy
+    symbol: str
+    underlying: Underlying
+    underlying_price: float
+    volatility: float
 
 class OptionContractMap(BaseModel):
-    ...
+    data: dict[str, OptionContract]
 
 class Underlying(BaseModel):
     ask: float
@@ -563,3 +567,54 @@ class Expiration(BaseModel):
             **{ f'{k}': v             for k, v in _to_dict(self.regular).items() }
         }
 """
+
+def to_snake_case(name: str) -> str:
+    """
+    Requires: must be camelCase ... if leading w/ digit, first char must be uppercase.
+
+    1. aBCDe01 -> a_BCDe01
+    2.         -> a_BCDe_01
+    3.         -> a_BC_De_01
+    4.         -> a_bc_de_01 
+    """
+    name = re.sub(r'(?<=[a-z0-9], [A-Z])', r'_\1', name)
+    name = re.sub(r'([0-9]+)', r'_\1', name)
+    name = re.sub(r'([A-Z]{2,}, [A-Z][a-z])', r'\1_\2', name)
+    name = name.lower()
+
+    if name and name[0].isdigit():
+        name = '_' + name
+    
+    return name
+
+def _to_dict(obj) -> dict:
+    """
+    """
+    if obj is None:
+        return {}
+
+    data = {}
+    for fld in fields(obj):
+        value = getattr(obj, fld.name, None)
+        if value is not None and value is not MISSING:
+            data[fld.name] = value
+    return data
+
+def base_init(cls):
+    """
+    decorator that overwrites the class's __init__ to support camel to snake case conversions
+    """
+    original = getattr(cls, '__init__', None)
+
+    @wraps(original)  # type: ignore
+    def init(self, **kwargs):
+        for key, value in kwargs.items():
+            snake_key = to_snake_case(key)
+            try:
+                setattr(self, snake_key, value)
+            except AttributeError:
+                pass
+    
+    cls.__init__ = init
+    return cls
+

@@ -1,6 +1,20 @@
 from enum import auto, Enum
 
 
+class Strategy(Enum):
+    SINGLE = auto()
+    ANALYTICAL = auto()
+    COVERED = auto()
+    VERTICAL = auto()
+    CALENDAR = auto()
+    STRANGLE = auto()
+    STRADDLE = auto()
+    BUTTERFLY = auto()
+    CONDOR = auto()
+    DIAGONAL = auto()
+    COLLAR = auto()
+    ROLL = auto()
+
 class AssetMainType(Enum):
     BOND = auto()
     EQUITY = auto()
