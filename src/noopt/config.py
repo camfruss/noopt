@@ -9,6 +9,11 @@ class _Config:
 
     @property
     def use_cache(self):
+        """
+        All files in the 'cache' must start with a function name corresponding to 
+        a function that uses said file. For example, def foo(): ... uses foo*.* 
+        saved in /data
+        """
         return self._params.get('use_cache')
 
     @property

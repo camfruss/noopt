@@ -192,9 +192,6 @@ class OptionResponse(Response, BaseModel):
     quote: QuoteOption
     reference: ReferenceOption
 
-# ----- Quote -----
-# Quote schemas
-
 class Quote(BaseModel):
     _52_week_high: float
     _52_week_low: float
@@ -340,9 +337,6 @@ class QuoteResponse(BaseModel):
 class QuoteResponseObject(BaseModel):
     data: Quote | QuoteError
 
-# ----- Reference -----
-# All Reference Schemas
-
 class ReferenceIndex(BaseModel):
     description: str
     exchange: str
@@ -412,8 +406,6 @@ class RegularMarket(BaseModel):
     regular_market_percent_change: float 
     regular_market_trade_time: int 
 
-# ----- Error -----
-
 class ErrorResponse(BaseModel):
     errors: list[Error]
 
@@ -428,8 +420,6 @@ class ErrorSource(BaseModel):
     header: str  # header name which lead to this error message
     parameter: str  # parameter name which leads to this error message
     pointer: list[str]  # list of attributes which lead to this error message
-
-# ----- Options -----
 
 class OptionChain(BaseModel):
     call_exp_date_map: dict[str, OptionContractMap]

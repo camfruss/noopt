@@ -76,11 +76,11 @@ class CashType(Enum):
     UNKNOWN = auto()
 
 class CollectiveType(Enum):
-    UNIT_INVESTMENT_TRUST = auto()
-    EXCHANGE_TRADED_FUND = auto()
     CLOSED_END_FUND = auto()
+    EXCHANGE_TRADED_FUND = auto()
     INDEX = auto()
     UNITS = auto()
+    UNIT_INVESTMENT_TRUST = auto()
 
 class ComplexOrderStrategyType(Enum):
     BACK_RATIO = auto()
@@ -117,18 +117,18 @@ class Duration(Enum):
 
 class EquityType(Enum):
     COMMON_STOCK = auto()
-    PREFERRED_STOCK = auto()
-    DEPOSITORY_RECEIPT = auto()
-    PREFERRED_DEPOSITORY_RECEIPT = auto()
-    RESTRICTED_STOCK = auto()
     COMPONENT_UNIT = auto()
-    RIGHT = auto()
-    WARRANT = auto()
     CONVERTIBLE_PREFERRED_STOCK = auto()
     CONVERTIBLE_STOCK = auto()
+    DEPOSITORY_RECEIPT = auto()
     LIMITED_PARTNERSHIP = auto()
-    WHEN_ISSUED = auto()
+    PREFERRED_DEPOSITORY_RECEIPT = auto()
+    PREFERRED_STOCK = auto()
+    RESTRICTED_STOCK = auto()
+    RIGHT = auto()
     UNKNOWN = auto()
+    WARRANT = auto()
+    WHEN_ISSUED = auto()
 
 class FeeType(Enum):
     ADDITIONAL_FEE = auto()
@@ -368,10 +368,10 @@ class StopType(Enum):
 
 class SubAccountType(Enum):
     CASH = auto()
-    MARGIN = auto()
-    SHORT = auto()
     DIV = auto()
     INCOME = auto()
+    MARGIN = auto()
+    SHORT = auto()
     UNKNOWN = auto()
 
 class TaxLotMethod(Enum):

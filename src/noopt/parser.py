@@ -5,6 +5,18 @@ from collections import defaultdict
 import json
 
 
+def parse_kwargs(params):
+    result = {}
+    message = ''
+    for k, v in params.items():
+        if v:
+            result[k] = v
+        if v is None or v == '':
+            message += f'{k} is None\n'
+    logger.info(message)
+
+    return result
+
 def parse_quotes(response) -> list[Equity]:
     """
     endpoint: /quotes

@@ -8,8 +8,6 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-# ----- Order -----
-
 class OrderStrategy(BaseModel):
     account_number: str
     advanced_order_type: AdvancedOrderType
@@ -142,8 +140,6 @@ class PreviewOrder(BaseModel):
     order_strategy: OrderStrategy
     order_validation_result: OrderValidationResult
 
-# ----- Commission and Fees -----
-
 class CommissionAndFee(BaseModel):
     commission: Commission
     fee: Fees
@@ -168,8 +164,6 @@ class FeeLeg(BaseModel):
 class FeeValue(BaseModel):
     data_type: FeeType
     value: float
-
-# ----- ----- 
 
 class Account(BaseModel):
     securities_account: SecuritiesAccount
@@ -203,8 +197,6 @@ class Position(BaseModel):
 class ServiceError(BaseModel):
     errors: list[str]
     message: str
-
-# ----- Account Information -----
 
 class SecuritiesAccount(BaseModel):
     data: MarginAccount | CashAccount
@@ -281,7 +273,7 @@ class MarginBalance(BaseModel):
     sma: float
     stock_buying_power: float
 
-class CashAccount(SecuritiesAccountBase):(BaseModel) 
+class CashAccount(SecuritiesAccountBase, BaseModel): 
     current_balances: CashBalance
     initial_balances: CashInitialBalance
     projected_balances: CashBalance
@@ -298,8 +290,6 @@ class CashBalance(BaseModel):
     long_non_marginable_market_value: float
     total_cash: float
     unsettled_cash: float
-
-# ----- Assets / Instruments -----
 
 class BaseAsset(BaseModel):
     asset_type: AssetType
@@ -354,6 +344,7 @@ class Future(BaseModel):
     last_trading_date: str  # date-time
     multiplier: float
     data_type: FutureType
+    
     data: TransactionCashEquivalent | CollectiveInvestment | Currency | TransactionEquity | \
           TransactionFixedIncome | Forex | Index | TransactionMutualFund | TransactionOption | \
           Product
@@ -361,6 +352,7 @@ class Future(BaseModel):
 class Index(BaseModel):
     active_contract: bool
     data_type: IndexType
+
     data: TransactionCashEquivalent | CollectiveInvestment | Currency | TransactionEquity | \
           TransactionFixedIncome | Forex | Future | TransactionMutualFund | TransactionOption | \
           Product
@@ -413,8 +405,6 @@ class AccountAPIOptionDeliverable(BaseModel):
     asset_type: AssetType
     deliverable_units: float
     symbol: str
-
-# ----- Transactions -----
 
 class TransactionAPIOptionDeliverable(BaseModel):
     asset_type: AssetType
@@ -483,8 +473,6 @@ class StreamerInfo(BaseModel):
 class Offer(BaseModel):
     level_2_permissions: bool   # default False
     mkt_data_permission: str
-
-# ----- Unused -----
 
 class DateParam(BaseModel):
     date: str  # yyyy-MM-dd'T'HH:mm:ss.SSSZ

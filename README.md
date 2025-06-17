@@ -51,14 +51,10 @@ Market Data API
 
 ## Roadmap
 
-- [ ] Complete covered call analysis
-- [ ] Add additional data endpoints 
 - [ ] Account for dividends
 - [ ] Add alternative option strategies (spreads, butterflys, iron condor, etc.)
 - [ ] Convert project into package to allow for single import
 - [ ] Create a testing suite with `pytest`
-- [ ] Integrate Trader API to allow for automated trades
-- [ ] and more ...
 
 ## Resources
 

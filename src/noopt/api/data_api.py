@@ -1,53 +1,29 @@
-from auth import auth_manager
-from config import config
 from parser import *
-
-import json
-
-import requests
-
-# remove none or ''
-# log unused kwargs / words that are not used
+from shared_api import APICategory, api_request, str_format
 
 
-_base_url = 'https://api.schwabapi.com'
-_marketdata_base = f'{_base_url}/marketdata/v1'
+def _market_data_request(endpoint: str, params: dict = {}):
+    api_request(APICategory.DATA, endpoint, params=params)
 
-def _str_format(symbols: str | list[str]) -> str:
-    """ Formats list of symbols into API-compatible format """
-    return ','.join(symbols) if isinstance(symbols, list) else str  # type: ignore
-
-def _market_data_request(endpoint: str, params: dict):
-    if config.use_cache:
-        with open(f'./data{endpoint}.json', 'r') as f:
-            response = json.loads(f.read())
-    else:
-        response = requests.get(
-            f'{_marketdata_base}{endpoint}',
-            headers={'Authorization': f'Bearer {auth_manager.access_token}'},
-            params=params,
-            timeout=auth_manager.request_timeout
-        )
-        response = response.json()
-
-    return response
+# ----- Quotes -----
 
 def quotes(symbols: list[str], **kwargs):
     """
     Get quotes by list of symbols
+    endpoint: /quotes
 
     Arguments:
-        symbols -- 
+        symbols -- list of symbols to retrieve quotes for
 
     Keyword Arguments:
         fields -- { quote, fundamental, extended, reference, regular, *all }
         indicative : bool --
     """
-    params = {
-        'symbols': _str_format(symbols),
+    params = parse_kwargs({
+        'symbols': str_format(symbols),
         'fields': kwargs.get('fields'),
         'indicative': kwargs.get('indicative'),
-    }
+    })
     response = _market_data_request('/quotes', params=params)
     equities = parse_quotes(response)
     return equities
@@ -55,6 +31,7 @@ def quotes(symbols: list[str], **kwargs):
 def quote(symbol: str, fields: str | list[str] = ''):
     """
     Get quote by a single symbol
+    endpoint: /{symbol_id}/quotes
 
     Arguments:
         symbol -- symbol of instrument
@@ -62,11 +39,15 @@ def quote(symbol: str, fields: str | list[str] = ''):
     Keyword Arguments:
         fields -- request for a subset of data { quote, fundamental, extended, reference, regular, all* }
     """
-    ...
+    params = parse_kwargs({ 'fields': fields })
+    _ = _market_data_request(f'/{symbol}/quotes', params=params)
+
+# ----- Option Chains -----
 
 def chains(symbol: str, **kwargs):
     """
     Get option chain for an optional symbol
+    endpoint: /chains
 
     Arguments:
         symbol -- single symbol 
@@ -89,7 +70,7 @@ def chains(symbol: str, **kwargs):
         option_type : str -- 
         entitlement : str -- { PN, NP, PP }
     """
-    params = {
+    params = parse_kwargs({
         'symbol': symbol,
         'contractType': kwargs.get('contract_type', 'ALL'),
         'strikeCount': kwargs.get('strike_count', 5),
@@ -107,8 +88,7 @@ def chains(symbol: str, **kwargs):
         'expMonth': kwargs.get('expiration_month'),
         'optionType': kwargs.get('option_type'),
         'entitlement': kwargs.get('entitlement')
-    }
-    params = { k:v for k,v in params.items() if v is not None }
+    })
     response = _market_data_request('/chains', params=params)
     chains = parse_chains(response)
     return chains
@@ -117,19 +97,23 @@ def expirationchain(symbol: str):
     """
     Get Option Expiration (Series) information for an optional symbol. Does not include individual
     options contracts for the underlying.
+    endpoint: /expirationchain
 
     Arguments:
         symbol 
     """
-    params = { 'symbol': symbol }
+    params = parse_kwargs({ 'symbol': symbol })
     response = _market_data_request('/expirationchain', params=params)
     expiration_chain = parse_expiration_chain(response)
     return expiration_chain
+
+# ----- Price History -----
 
 def pricehistory(symbol: str, **kwargs):
     """
     Get historical Open, High, Low, Close, Volume for a given frequency (aggregation). Frequency available is
     dependent on period_type. Date format is in EPOCH milliseconds.
+    endpoint: /pricehistory
 
     Arguments:
         symbol
@@ -148,14 +132,18 @@ def pricehistory(symbol: str, **kwargs):
         need_extended_hours_data : bool -- need extended hours data
         need_previous_close : bool -- need previous close price/date
     """
-    params = {
+    params = parse_kwargs({
         'symbol': symbol,
         'periodType': kwargs.get('period_type')
-    }
+    })
+    _ = _market_data_request('/pricehistory', params=params)
+
+# ----- Movers -----
 
 def movers(symbol_id: str, **kwargs):
     """
     Get a list of top 10 securities movers for a specific index    
+    endpoint: /movers/{symbol_id}
 
     Arguments:
         symbol_id -- index symbol
@@ -166,9 +154,13 @@ def movers(symbol_id: str, **kwargs):
         sort : str -- { VOLUME, TRADES, PERCENT_CHANGE_[UP|DOWN] }
         frequency : int -- movers with the specified direction sof up/down { 0*, 1, 5, 10, 30, 60 }
     """
-    params = {
-        'symbol_id': symbol_id
-    }
+    params = parse_kwargs({
+        'sort': kwargs.get('sort'),
+        'frequency': kwargs.get('frequency')
+    })
+    _ = _market_data_request(f'/movers/{symbol_id}', params=params)
+
+# ----- Market Hours -----
 
 def markets(markets: list[str], **kwargs):
     """
@@ -181,9 +173,11 @@ def markets(markets: list[str], **kwargs):
     Keyword Arguments:
         date : str -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
-    params = {
-        'markets': markets  # market_id if only 1 amrket
-    }
+    params = parse_kwargs({
+        'markets': markets,
+        'date': kwargs.get('date')
+    })
+    _ = _market_data_request('/markets', params=params)
 
 def market(market_id: str, **kwargs):
     """
@@ -196,9 +190,10 @@ def market(market_id: str, **kwargs):
     Keyword Arguments:
         date : str -- [curr, curr+1year], defaults to today  # yyyy-MM-dd format
     """
-    params = {
-        'market_id': market_id
-    }
+    params = parse_kwargs({ 'date': kwargs.get('date') })
+    _ = _market_data_request(f'/markets/{market_id}', params=params)
+
+# ----- Instruments -----
 
 def instruments(symbol: str, projection: str):
     """
@@ -209,7 +204,11 @@ def instruments(symbol: str, projection: str):
         symbol -- symbol of a security
         projection -- search by: { symbol-search, symbol-regex, desc-search, desc-regex, search, fundamental }
     """
-    ...
+    params = parse_kwargs({
+        'symbol': symbol,
+        'projection': projection
+    })
+    _ = _market_data_request('/instruments', params=params)
 
 def instrument(cusip_id: str):
     """
@@ -219,5 +218,5 @@ def instrument(cusip_id: str):
     Arguments:
         cusip_id -- cusip of a security
     """
-    ...
+    _ = _market_data_request(f'/instruments/{cusip_id}')
 

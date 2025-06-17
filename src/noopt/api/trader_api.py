@@ -1,3 +1,9 @@
+from shared_api import APICategory, api_request, str_format 
+from parser import parse_kwargs
+
+
+def _trader_request(endpoint: str, request_type: str = 'GET', params: dict = {}):
+    api_request(APICategory.TRADER, endpoint, params=params)
 
 # ----- Common Arguments -----
 
@@ -18,6 +24,7 @@ def account_numbers():
     Get list of account numbers and their encrypted values
     endpoint: /accounts/accountNumbers
     """
+    _ = _trader_request('/accounts/accountNumbers')
 
 def accounts(**kwargs):
     """
@@ -27,6 +34,8 @@ def accounts(**kwargs):
     Keyword Arguments
         fields : str -- which fields to return { positions }
     """
+    params = parse_kwargs({ 'fields': str_format(kwargs.get('fields', '')) })
+    _ = _trader_request('/accounts', params=params)
 
 def account(account_number: str, **kwargs):
     """
@@ -39,6 +48,8 @@ def account(account_number: str, **kwargs):
     Keyword Arguments:
         fields : str -- which fields to return { positions }
     """
+    params = parse_kwargs({ 'fields': str_format(kwargs.get('fields', '')) })
+    _ = _trader_request(f'/accounts/{account_number}', params=params)
 
 # ----- Orders -----
 
@@ -48,18 +59,21 @@ def get_orders(account_number: str, start_date: str, end_date: str, **kwargs):
     endpoint: /accounts/{accountNumber}/orders
 
     Arguments:
-        account_number
-        start_date
-        end_date
+        account_number --
+        start_date -- 
+        end_date -- 
 
     Keyword Arguments:
         max_results : int -- max number of ordered to retrieve, default = 3000
-        status : str 
+        status : str --
     """
-    params = {
+    params = parse_kwargs({
         'fromEnteredTime': start_date,
-        'toEnteredTime': end_date
-    }
+        'toEnteredTime': end_date,
+        'maxResults': kwargs.get('max_results'),
+        'status': kwargs.get('status')
+    })
+    _ = _trader_request(f'/accounts/{account_number}', params=params)
 
 def post_order(account_number: str, order: Order):
     """
@@ -70,6 +84,7 @@ def post_order(account_number: str, order: Order):
         account_number
         order -- Order request body
     """
+    _ = _trader_request(f'/accounts/{account_number}/orders')
 
 def get_order(account_number: str, order_id: str):
     """
@@ -80,6 +95,7 @@ def get_order(account_number: str, order_id: str):
         account_number
         order_id
     """
+    _ = _trader_request(f'/accounts/{account_number}/orders/{order_id}')
 
 def cancel_order(account_number: str, order_id: str):
     """
@@ -90,6 +106,7 @@ def cancel_order(account_number: str, order_id: str):
         account_number
         order_id
     """
+    _ = _trader_request(f'/accounts/{account_number}/orders/{order_id}')
 
 def replace_order(account_number: str, order_id: str):
     """
@@ -100,6 +117,7 @@ def replace_order(account_number: str, order_id: str):
         account_number
         order_id
     """
+    _ = _trader_request(f'/accounts/{account_number}/orders/{order_id}')
 
 def all_orders(start_date: str, end_date: str):
     """
@@ -115,6 +133,10 @@ def all_orders(start_date: str, end_date: str):
         status
 
     """
+    params = parse_kwargs({
+        '': ,
+    })
+    _ = _trader_request('/accounts', params=params)
 
 def preview_order(account_number: str, order: Order):
     """
@@ -137,6 +159,10 @@ def transactions():
         symbol: str -- if there is any special character in the symbol, send the encoded value
 
     """
+    params = parse_kwargs({
+        '': ,
+    })
+    _ = _trader_request('/accounts', params=params)
 
 def transaction(account_number: str, transaction_id: int):
     """
@@ -146,6 +172,10 @@ def transaction(account_number: str, transaction_id: int):
         account_number
         transaction_id: the ID of the transaction being retrieved
     """
+    params = parse_kwargs({
+        '': ,
+    })
+    _ = _trader_request('/accounts', params=params)
 
 # ----- UserPreference -----
 
@@ -153,3 +183,8 @@ def user_preference():
     """
     Get user preference information for the logged in user.
     """
+    params = parse_kwargs({
+        '': ,
+    })
+    _ = _trader_request('/accounts', params=params)
+

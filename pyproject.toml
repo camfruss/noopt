@@ -1,7 +1,7 @@
 [project]
-name = "options"
+name = "noopt"
 version = "0.1.0"
-description = "Add your description here"
+description = "Option analysis with Schwab"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -11,3 +11,10 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "requests>=2.32.3",
 ]
+authors = [
+    { name = "Cameron Russell" }
+]
+
+[build-system]
+requires = ["uv_build>=0.7.13,<0.8.0"]
+build-backend = "uv_build"
